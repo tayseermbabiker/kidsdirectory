@@ -96,13 +96,31 @@ async function pushToAirtable(businesses) {
   }
 }
 
-async function launchBrowser() {
+async function launchBrowser(options = {}) {
   const { chromium } = require('playwright');
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({
+    headless: options.headless !== undefined ? options.headless : true,
+    args: [
+      '--disable-blink-features=AutomationControlled',
+      '--no-sandbox',
+      '--disable-dev-shm-usage'
+    ]
+  });
   const context = await browser.newContext({
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
     viewport: { width: 1280, height: 800 },
-    locale: 'en-US'
+    locale: 'en-US',
+    javaScriptEnabled: true
+  });
+  // Remove webdriver flag to avoid detection
+  await context.addInitScript(() => {
+    Object.defineProperty(navigator, 'webdriver', { get: () => false });
+    // Fake plugins
+    Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+    // Fake languages
+    Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
+    // Remove chrome automation indicators
+    window.chrome = { runtime: {} };
   });
   return { browser, context };
 }
