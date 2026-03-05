@@ -1,0 +1,29 @@
+{
+  "name": "kidsdirectory",
+  "version": "1.0.0",
+  "description": "Kids services directory for Plano/Frisco, TX",
+  "scripts": {
+    "scrape": "node scrapers/run-all.js",
+    "scrape:maps": "node scrapers/google-maps.js",
+    "scrape:enrich": "node scrapers/enrich-businesses.js",
+    "scrape:youtube": "node scrapers/youtube-reviews.js",
+    "export": "node scripts/export-businesses.js",
+    "scrape:tutoring": "node scrapers/yelp-tutoring.js",
+    "scrape:activities": "node scrapers/yelp-kids-activities.js",
+    "scrape:parties": "node scrapers/yelp-party-venues.js",
+    "scrape:camps": "node scrapers/yelp-summer-camps.js",
+    "scrape:pediatric": "node scrapers/yelp-pediatric.js",
+    "scrape:daycares": "node scrapers/yelp-daycares.js",
+    "scrape:restaurants": "node scrapers/yelp-family-restaurants.js",
+    "scrape:haircuts": "node scrapers/yelp-kids-haircuts.js"
+  },
+  "dependencies": {
+    "@sparticuz/chromium": "^131.0.0",
+    "playwright-core": "^1.49.0",
+    "dotenv": "^16.3.1",
+    "node-fetch": "^2.7.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0"
+  }
+}
