@@ -76,15 +76,12 @@ function renderHome(app) {
       <div class="hero-bg" style="background-image:url('${HERO_IMG}')"></div>
       <div class="hero-content">
         <h1>Discover the best places for your <em>little ones</em></h1>
-        <p>Trusted by parents in Plano & Frisco, TX — camps, classes, doctors, and more.</p>
+        <p>Trusted by parents in Plano & Frisco, TX</p>
         <div class="search-box">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
           </svg>
           <input type="text" id="search-input" placeholder="Search tutoring, swim lessons, party venues..." autocomplete="off">
-        </div>
-        <div class="cat-shortcuts">
-          ${CATEGORIES.map(c => `<a href="/plano/${c.slug}" class="cat-shortcut">${c.name}</a>`).join('')}
         </div>
       </div>
     </div>
