@@ -249,7 +249,7 @@ function renderBizCard(biz) {
     <a href="/go/${biz.id}" class="biz-card">
       ${biz.image_url ?
         `<img class="biz-card-img" src="${escHtml(biz.image_url)}" alt="${escHtml(biz.name)}" loading="lazy">` :
-        `<div class="biz-card-placeholder">${(biz.name || '?')[0]}</div>`}
+        `<div class="biz-card-placeholder">${getCategoryEmoji(biz.category)}</div>`}
       <div class="biz-card-body">
         <div class="biz-card-cat">${escHtml(biz.category)}</div>
         <div class="biz-card-name">${escHtml(biz.name)}</div>
@@ -278,6 +278,20 @@ function getCategoryIcon(icon) {
     'scissors': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>'
   };
   return icons[icon] || icons['activity'];
+}
+
+function getCategoryEmoji(category) {
+  const map = {
+    'Tutoring & Learning Centers': 'ABC',
+    'Kids Activities & Classes': 'PLAY',
+    'Birthday Party Venues': 'YAY',
+    'Summer Camps & After School': 'FUN',
+    'Pediatric Dentists & Doctors': 'CARE',
+    'Daycares & Preschools': 'KIDS',
+    'Family-Friendly Restaurants': 'EAT',
+    'Kids Haircuts & Clothing': 'STYLE'
+  };
+  return map[category] || 'GO';
 }
 
 async function handleSubscribe(e) {

@@ -23,7 +23,7 @@ async function getAllRecords() {
 
 async function enrichFromGoogleMaps(context, bizName, bizCity) {
   const page = await context.newPage();
-  const result = { services: '', hours: '' };
+  const result = { services: '', hours: '', image_url: '' };
 
   try {
     const query = `${bizName} ${bizCity} TX`;
@@ -80,8 +80,20 @@ async function enrichFromGoogleMaps(context, bizName, bizCity) {
       return unique.slice(0, 20).join(', ');
     }).catch(() => '');
 
+    // Hero image from detail page
+    const image_url = await page.evaluate(() => {
+      const heroImg = document.querySelector('button[jsaction*="heroHeaderImage"] img, img.Xmpv5');
+      if (heroImg) return heroImg.getAttribute('src') || '';
+      const ogImg = document.querySelector('meta[property="og:image"]');
+      if (ogImg) return ogImg.getAttribute('content') || '';
+      const anyImg = document.querySelector('img[src*="googleusercontent"][src*="w408"]');
+      if (anyImg) return anyImg.getAttribute('src') || '';
+      return '';
+    }).catch(() => '');
+
     result.services = services;
     result.hours = hours;
+    result.image_url = image_url;
   } catch (e) {
     console.log(`    ! Error: ${e.message}`);
   }
