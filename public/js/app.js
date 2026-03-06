@@ -104,8 +104,10 @@ function renderHome(app) {
           return `
           <a href="/plano/${c.slug}" class="cat-card" data-color="${color}">
             <div class="cat-card-icon">${icon}</div>
-            <h3>${c.name}</h3>
-            <p>${count} listings in Plano & Frisco</p>
+            <div class="cat-card-text">
+              <h3>${c.name}</h3>
+              <p>${count} listings in Plano & Frisco</p>
+            </div>
           </a>`;
         }).join('')}
       </div>
@@ -175,8 +177,10 @@ function renderCityPage(app, citySlug) {
           return `
           <a href="/${citySlug}/${c.slug}" class="cat-card" data-color="${color}">
             <div class="cat-card-icon">${icon}</div>
-            <h3>${c.name}</h3>
-            <p>${count} listings</p>
+            <div class="cat-card-text">
+              <h3>${c.name}</h3>
+              <p>${count} listings</p>
+            </div>
           </a>`;
         }).join('')}
       </div>
