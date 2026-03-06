@@ -23,6 +23,11 @@ function escHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+function mapsUrl(address, name, city) {
+  const q = address || `${name}, ${city || 'Plano'}, TX`;
+  return `https://www.google.com/maps/search/${encodeURIComponent(q)}`;
+}
+
 exports.handler = async (event) => {
   let id = event.queryStringParameters?.id;
   if (!id) {
@@ -48,17 +53,18 @@ exports.handler = async (event) => {
 
     const related = businesses
       .filter(b => b.category === f.category && b.id !== id)
+      .sort((a, b) => (b.rating || 0) - (a.rating || 0))
       .slice(0, 5);
 
     // Rating
     const ratingHtml = f.rating ? `
       <div class="rating-bar">
         <span class="rating-num">${f.rating}</span>
-        <span class="rating-stars">${'*'.repeat(Math.round(f.rating)).replace(/\*/g, '<svg width="16" height="16" viewBox="0 0 24 24" fill="#E8B872"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>')}</span>
+        <span class="rating-stars">${'*'.repeat(Math.round(f.rating)).replace(/\*/g, '<svg width="18" height="18" viewBox="0 0 24 24" fill="#E8B872"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>')}</span>
         ${f.review_count ? `<span class="rating-count">(${f.review_count} reviews)</span>` : ''}
       </div>` : '';
 
-    // Services
+    // Services as badges
     let servicesHtml = '';
     if (f.services) {
       const items = f.services.split(',').map(s => s.trim()).filter(Boolean);
@@ -76,7 +82,7 @@ exports.handler = async (event) => {
     if (f.hours) {
       hoursHtml = `
         <div class="section">
-          <h2>Hours</h2>
+          <h2>Hours of Operation</h2>
           <div class="hours-grid">${f.hours.split('\n').map(line => {
             const parts = line.split(':');
             if (parts.length >= 2) {
@@ -105,6 +111,20 @@ exports.handler = async (event) => {
           </div>`;
       }
     }
+
+    // Map embed
+    const mapQuery = encodeURIComponent(f.address ? `${f.name}, ${f.address}` : `${f.name}, ${f.city || 'Plano'}, TX`);
+    const mapHtml = `
+      <div class="section">
+        <h2>Location</h2>
+        <div class="map-wrap">
+          <iframe
+            width="100%" height="300" style="border:0; border-radius:8px;"
+            loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+            src="https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${mapQuery}">
+          </iframe>
+        </div>
+      </div>`;
 
     // Related
     const relatedHtml = related.length > 0 ? `
@@ -153,105 +173,146 @@ exports.handler = async (event) => {
   <meta property="og:title" content="${escHtml(f.name)} — ${escHtml(f.category)} in ${escHtml(f.city)} | KidCompass">
   <meta property="og:description" content="${escHtml((f.description || `${f.name} — ${f.category} in ${f.city}, TX`).substring(0, 200))}">
   ${f.image_url ? `<meta property="og:image" content="${escHtml(f.image_url)}">` : ''}
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
   <script type="application/ld+json">${jsonLd}</script>
   <style>
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
     body { font-family:'Inter',sans-serif; color:#2E2E2E; background:#FAF9F7; line-height:1.6; }
+
     .nav { background:#fff; border-bottom:1px solid #E4E4E7; padding:0 24px; }
-    .nav-inner { max-width:1100px; margin:0 auto; display:flex; align-items:center; height:64px; }
+    .nav-inner { max-width:1100px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; height:64px; }
     .logo { font-family:'Poppins',sans-serif; font-size:1.4rem; font-weight:600; color:#3BA7A0; text-decoration:none; letter-spacing:-0.5px; }
+    .nav-link { font-size:0.85rem; color:#6A6A6A; text-decoration:none; }
+    .nav-link:hover { color:#3BA7A0; }
 
-    .hero-img { width:100%; max-height:400px; object-fit:cover; }
+    .hero-section { position:relative; background:#1a1a1a; }
+    .hero-img { width:100%; max-height:400px; object-fit:cover; display:block; }
+    .hero-placeholder { width:100%; height:260px; background:linear-gradient(135deg, #3BA7A0 0%, #2d8a84 60%, #1a6b66 100%); display:flex; align-items:center; justify-content:center; }
+    .hero-placeholder-text { font-family:'Poppins',sans-serif; font-size:2.5rem; font-weight:700; color:rgba(255,255,255,0.2); letter-spacing:6px; text-transform:uppercase; }
+    .hero-overlay { position:absolute; bottom:0; left:0; right:0; height:120px; background:linear-gradient(transparent, rgba(0,0,0,0.4)); }
 
-    .wrap { max-width:800px; margin:0 auto; padding:40px 24px; }
-    .back { display:inline-block; margin-bottom:24px; font-size:0.85rem; color:#6A6A6A; text-decoration:none; }
-    .back:hover { color:#2E2E2E; }
-    .cat { font-size:0.7rem; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:#3BA7A0; margin-bottom:8px; }
-    h1 { font-family:'Poppins',sans-serif; font-size:2rem; font-weight:600; color:#2E2E2E; margin-bottom:8px; }
-    .loc { font-size:0.9rem; color:#6A6A6A; margin-bottom:16px; }
+    .wrap { max-width:800px; margin:0 auto; padding:40px 24px 60px; }
+
+    .breadcrumb { display:flex; align-items:center; gap:6px; margin-bottom:24px; font-size:0.8rem; }
+    .breadcrumb a { color:#6A6A6A; text-decoration:none; }
+    .breadcrumb a:hover { color:#3BA7A0; }
+    .breadcrumb span { color:#CCC; }
+
+    .cat-badge { display:inline-block; padding:4px 12px; background:rgba(59,167,160,0.1); color:#3BA7A0; font-size:0.7rem; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; border-radius:4px; margin-bottom:12px; }
+    h1 { font-family:'Poppins',sans-serif; font-size:2rem; font-weight:700; color:#2E2E2E; margin-bottom:4px; line-height:1.3; }
+    .subtitle { font-size:0.95rem; color:#6A6A6A; margin-bottom:16px; }
 
     .rating-bar { display:flex; align-items:center; gap:8px; margin-bottom:24px; }
-    .rating-num { font-size:1.5rem; font-weight:500; color:#2E2E2E; }
-    .rating-stars { display:flex; gap:2px; }
-    .rating-count { font-size:0.8rem; color:#6A6A6A; }
+    .rating-num { font-size:1.6rem; font-weight:600; color:#2E2E2E; }
+    .rating-stars { display:flex; gap:2px; align-items:center; }
+    .rating-count { font-size:0.85rem; color:#6A6A6A; }
 
-    .meta-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:32px; padding:24px; background:#fff; border-radius:8px; border:1px solid #E4E4E7; font-size:0.85rem; color:#555; }
-    .meta-item { display:flex; align-items:flex-start; gap:8px; }
-    .meta-icon { width:18px; height:18px; flex-shrink:0; opacity:0.5; margin-top:2px; }
-    .meta-item a { color:#3BA7A0; text-decoration:none; }
-    .meta-item a:hover { text-decoration:underline; }
+    .quick-actions { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:32px; }
+    .quick-btn { display:inline-flex; align-items:center; gap:6px; padding:10px 20px; border-radius:8px; font-size:0.85rem; font-weight:500; text-decoration:none; transition:all 0.2s; }
+    .quick-btn-primary { background:#3BA7A0; color:#fff; }
+    .quick-btn-primary:hover { background:#2E8A84; }
+    .quick-btn-outline { background:#fff; color:#2E2E2E; border:1px solid #DDD; }
+    .quick-btn-outline:hover { border-color:#3BA7A0; color:#3BA7A0; }
+    .quick-btn svg { width:16px; height:16px; }
 
-    .desc { font-size:0.95rem; color:#555; line-height:1.8; margin-bottom:32px; }
+    .info-cards { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:32px; }
+    .info-card { padding:16px; background:#fff; border-radius:10px; border:1px solid #E4E4E7; }
+    .info-card-label { font-size:0.7rem; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:#999; margin-bottom:6px; }
+    .info-card-value { font-size:0.9rem; color:#2E2E2E; word-break:break-word; }
+    .info-card-value a { color:#3BA7A0; text-decoration:none; }
+    .info-card-value a:hover { text-decoration:underline; }
+
+    .about { margin-bottom:40px; }
+    .about h2 { font-family:'Poppins',sans-serif; font-size:1.3rem; font-weight:600; color:#2E2E2E; margin-bottom:12px; }
+    .about p { font-size:0.95rem; color:#555; line-height:1.8; }
 
     .section { margin-bottom:40px; }
     .section h2 { font-family:'Poppins',sans-serif; font-size:1.3rem; font-weight:600; color:#2E2E2E; margin-bottom:16px; padding-bottom:8px; border-bottom:1px solid #E4E4E7; }
 
     .tags { display:flex; flex-wrap:wrap; gap:8px; }
-    .tag { display:inline-block; padding:6px 14px; background:#F1F1F3; border:1px solid #E4E4E7; border-radius:20px; font-size:0.8rem; color:#555; }
+    .tag { display:inline-block; padding:6px 14px; background:#fff; border:1px solid #E4E4E7; border-radius:20px; font-size:0.8rem; color:#555; transition:all 0.15s; }
+    .tag:hover { border-color:#3BA7A0; color:#3BA7A0; }
 
-    .hours-grid { display:flex; flex-direction:column; gap:4px; }
-    .hours-row { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #F0F0F0; font-size:0.85rem; }
+    .hours-grid { display:flex; flex-direction:column; gap:0; background:#fff; border-radius:10px; border:1px solid #E4E4E7; overflow:hidden; }
+    .hours-row { display:flex; justify-content:space-between; padding:10px 16px; font-size:0.85rem; border-bottom:1px solid #F5F5F5; }
+    .hours-row:last-child { border-bottom:none; }
     .hours-day { font-weight:500; color:#2E2E2E; }
     .hours-time { color:#6A6A6A; }
 
     .reviews { display:flex; flex-direction:column; gap:16px; }
-    .review { padding:20px; background:#fff; border-radius:8px; border:1px solid #E4E4E7; border-left:3px solid #3BA7A0; }
-    .review p { font-size:0.9rem; color:#555; line-height:1.7; font-style:italic; }
+    .review { padding:20px 24px; background:#fff; border-radius:10px; border:1px solid #E4E4E7; border-left:3px solid #3BA7A0; position:relative; }
+    .review::before { content:'"'; position:absolute; top:8px; left:16px; font-size:2.5rem; color:rgba(59,167,160,0.15); font-family:Georgia,serif; line-height:1; }
+    .review p { font-size:0.9rem; color:#555; line-height:1.7; font-style:italic; padding-left:20px; }
 
-    .cta-row { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:40px; }
-    .cta { display:inline-block; padding:14px 32px; background:#3BA7A0; color:#fff; text-decoration:none; font-size:0.85rem; font-weight:500; border-radius:6px; transition:background 0.2s; }
-    .cta:hover { background:#2E8A84; }
-    .cta-outline { display:inline-block; padding:14px 32px; background:transparent; color:#2E2E2E; text-decoration:none; font-size:0.85rem; font-weight:500; border-radius:6px; border:1px solid #CCC; transition:all 0.2s; }
-    .cta-outline:hover { border-color:#3BA7A0; color:#3BA7A0; }
+    .map-wrap { border-radius:10px; overflow:hidden; border:1px solid #E4E4E7; }
 
-    .related { margin-top:48px; }
-    .related-card { display:flex; align-items:center; gap:16px; padding:16px 0; border-bottom:1px solid #E4E4E7; text-decoration:none; color:#2E2E2E; transition:background 0.1s; }
-    .related-card:hover { background:#F5F5F5; margin:0 -8px; padding:16px 8px; border-radius:4px; }
-    .related-img { width:56px; height:56px; border-radius:8px; object-fit:cover; flex-shrink:0; }
-    .related-placeholder { background:#F1F1F3; display:flex; align-items:center; justify-content:center; font-family:'Poppins',sans-serif; font-size:1.2rem; color:#6A6A6A; width:56px; height:56px; border-radius:8px; }
-    .related-name { font-family:'Poppins',sans-serif; font-size:1rem; color:#2E2E2E; }
+    .related { margin-top:48px; padding-top:32px; border-top:2px solid #E4E4E7; }
+    .related-card { display:flex; align-items:center; gap:16px; padding:14px 0; border-bottom:1px solid #F0F0F0; text-decoration:none; color:#2E2E2E; transition:all 0.15s; }
+    .related-card:last-child { border-bottom:none; }
+    .related-card:hover { padding-left:8px; }
+    .related-img { width:56px; height:56px; border-radius:10px; object-fit:cover; flex-shrink:0; }
+    .related-placeholder { background:linear-gradient(135deg,#3BA7A0,#2d8a84); display:flex; align-items:center; justify-content:center; font-family:'Poppins',sans-serif; font-size:1.1rem; font-weight:600; color:rgba(255,255,255,0.7); width:56px; height:56px; border-radius:10px; }
+    .related-name { font-family:'Poppins',sans-serif; font-size:0.95rem; font-weight:500; color:#2E2E2E; }
     .related-meta { font-size:0.8rem; color:#6A6A6A; margin-top:2px; }
 
     .footer { margin-top:80px; padding:24px; border-top:1px solid #E4E4E7; text-align:center; font-size:0.75rem; color:#6A6A6A; background:#fff; }
 
     @media (max-width:600px) {
       h1 { font-size:1.5rem; }
-      .meta-grid { grid-template-columns:1fr; }
-      .cta-row { flex-direction:column; }
-      .cta, .cta-outline { text-align:center; }
+      .info-cards { grid-template-columns:1fr; }
+      .quick-actions { flex-direction:column; }
+      .quick-btn { justify-content:center; }
+      .hero-img { max-height:260px; }
     }
   </style>
 </head>
 <body>
-  <nav class="nav"><div class="nav-inner"><a href="/" class="logo">KidCompass</a></div></nav>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="/" class="logo">KidCompass</a>
+      <a href="/" class="nav-link">Browse All</a>
+    </div>
+  </nav>
 
-  ${f.image_url ? `<img class="hero-img" src="${escHtml(f.image_url)}" alt="${escHtml(f.name)}">` : ''}
+  <div class="hero-section">
+    ${f.image_url ? `<img class="hero-img" src="${escHtml(f.image_url)}" alt="${escHtml(f.name)}">` : `<div class="hero-placeholder"><span class="hero-placeholder-text">${escHtml(f.category || '')}</span></div>`}
+    ${f.image_url ? '<div class="hero-overlay"></div>' : ''}
+  </div>
 
   <div class="wrap">
-    <a href="/" class="back">Back to directory</a>
-    <div class="cat">${escHtml(f.category || '')}</div>
+    <div class="breadcrumb">
+      <a href="/">Home</a><span>/</span>
+      <a href="/${(f.city || 'plano').toLowerCase()}">${escHtml(f.city || 'Plano')}</a><span>/</span>
+      <a href="/${(f.city || 'plano').toLowerCase()}/${escHtml(getCatSlug(f.category))}">${escHtml(f.category || '')}</a>
+    </div>
+
+    <div class="cat-badge">${escHtml(f.category || '')}</div>
     <h1>${escHtml(f.name)}</h1>
-    <p class="loc">${escHtml(f.city || 'Plano')}, TX${f.price_range ? ' — ' + escHtml(f.price_range) : ''}</p>
+    <p class="subtitle">${escHtml(f.city || 'Plano')}, TX${f.address ? ' — ' + escHtml(f.address) : ''}</p>
 
     ${ratingHtml}
 
-    <div class="meta-grid">
-      ${f.address ? `<div class="meta-item"><svg class="meta-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg><span>${escHtml(f.address)}</span></div>` : ''}
-      ${f.phone ? `<div class="meta-item"><svg class="meta-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg><span>${escHtml(f.phone)}</span></div>` : ''}
-      ${f.website ? `<div class="meta-item"><svg class="meta-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95c-.32-1.25-.78-2.45-1.38-3.56 1.84.63 3.37 1.91 4.33 3.56zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2 0 .68.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56-1.84-.63-3.37-1.9-4.33-3.56zm2.95-8H5.08c.96-1.66 2.49-2.93 4.33-3.56C8.81 5.55 8.35 6.75 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2 0-.68.07-1.35.16-2h4.68c.09.65.16 1.32.16 2 0 .68-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95c-.96 1.65-2.49 2.93-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2 0-.68-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/></svg><a href="${escHtml(f.website)}" target="_blank" rel="noopener">Visit Website</a></div>` : ''}
+    <div class="quick-actions">
+      ${f.website ? `<a class="quick-btn quick-btn-primary" href="${escHtml(f.website)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Visit Website</a>` : ''}
+      ${f.phone ? `<a class="quick-btn quick-btn-outline" href="tel:${escHtml(f.phone.replace(/[^+\d]/g, ''))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>${escHtml(f.phone)}</a>` : ''}
+      <a class="quick-btn quick-btn-outline" href="${mapsUrl(f.address, f.name, f.city)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Get Directions</a>
     </div>
 
-    ${f.description ? `<div class="desc">${f.description.replace(/\n/g, '<br>')}</div>` : ''}
-
-    <div class="cta-row">
-      ${f.website ? `<a class="cta" href="${escHtml(f.website)}" target="_blank" rel="noopener">Visit Website</a>` : ''}
-      ${f.phone ? `<a class="cta-outline" href="tel:${escHtml(f.phone)}">Call Now</a>` : ''}
+    <div class="info-cards">
+      ${f.address ? `<div class="info-card"><div class="info-card-label">Address</div><div class="info-card-value"><a href="${mapsUrl(f.address, f.name, f.city)}" target="_blank" rel="noopener">${escHtml(f.address)}</a></div></div>` : ''}
+      ${f.phone ? `<div class="info-card"><div class="info-card-label">Phone</div><div class="info-card-value"><a href="tel:${escHtml(f.phone.replace(/[^+\d]/g, ''))}">${escHtml(f.phone)}</a></div></div>` : ''}
+      ${f.website ? `<div class="info-card"><div class="info-card-label">Website</div><div class="info-card-value"><a href="${escHtml(f.website)}" target="_blank" rel="noopener">${escHtml(f.website.replace(/^https?:\/\//, '').replace(/\/$/, ''))}</a></div></div>` : ''}
+      ${f.price_range ? `<div class="info-card"><div class="info-card-label">Price Range</div><div class="info-card-value">${escHtml(f.price_range)}</div></div>` : ''}
+      <div class="info-card"><div class="info-card-label">City</div><div class="info-card-value">${escHtml(f.city || 'Plano')}, TX</div></div>
+      <div class="info-card"><div class="info-card-label">Source</div><div class="info-card-value">${escHtml(f.source || 'Google Maps')}</div></div>
     </div>
+
+    ${f.description ? `<div class="about"><h2>About ${escHtml(f.name)}</h2><p>${f.description.replace(/\n/g, '<br>')}</p></div>` : ''}
 
     ${servicesHtml}
     ${hoursHtml}
     ${reviewsHtml}
+    ${mapHtml}
     ${relatedHtml}
   </div>
   <div class="footer">KidCompass — Plano & Frisco, TX</div>
@@ -267,3 +328,17 @@ exports.handler = async (event) => {
     return { statusCode: 500, body: 'Server error: ' + err.message };
   }
 };
+
+function getCatSlug(category) {
+  const map = {
+    'Tutoring & Learning Centers': 'tutoring-learning-centers',
+    'Kids Activities & Classes': 'kids-activities-classes',
+    'Birthday Party Venues': 'birthday-party-venues',
+    'Summer Camps & After School': 'summer-camps-after-school',
+    'Pediatric Dentists & Doctors': 'pediatric-dentists-doctors',
+    'Daycares & Preschools': 'daycares-preschools',
+    'Family-Friendly Restaurants': 'family-friendly-restaurants',
+    'Kids Haircuts & Clothing': 'kids-haircuts-clothing'
+  };
+  return map[category] || '';
+}
