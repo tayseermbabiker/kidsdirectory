@@ -3,6 +3,22 @@ let currentCity = null;
 let currentCategory = null;
 let searchQuery = '';
 
+// Unsplash hero image — happy diverse kids playing
+const HERO_IMG = 'https://images.unsplash.com/photo-1587654780293-f32e19c5e93a?w=1400&q=80&auto=format';
+
+// Category card colors
+const CAT_COLORS = ['teal', 'coral', 'golden', 'purple', 'sky', 'teal', 'coral', 'golden'];
+const CAT_EMOJIS = {
+  'Tutoring & Learning Centers': '&#x1F4DA;',
+  'Kids Activities & Classes': '&#x1F3A8;',
+  'Birthday Party Venues': '&#x1F382;',
+  'Summer Camps & After School': '&#x2600;&#xFE0F;',
+  'Pediatric Dentists & Doctors': '&#x1F9D1;&#x200D;&#x2695;&#xFE0F;',
+  'Daycares & Preschools': '&#x1F3E0;',
+  'Family-Friendly Restaurants': '&#x1F37D;&#xFE0F;',
+  'Kids Haircuts & Clothing': '&#x2702;&#xFE0F;'
+};
+
 async function loadData() {
   try {
     const res = await fetch('/businesses.json');
@@ -18,13 +34,8 @@ function route() {
   const path = window.location.pathname;
   const app = document.getElementById('app');
 
-  // Home
-  if (path === '/' || path === '') {
-    renderHome(app);
-    return;
-  }
+  if (path === '/' || path === '') { renderHome(app); return; }
 
-  // City page: /plano or /frisco
   const cityMatch = path.match(/^\/(plano|frisco)\/?$/);
   if (cityMatch) {
     currentCity = cityMatch[1];
@@ -33,7 +44,6 @@ function route() {
     return;
   }
 
-  // Category page: /plano/tutoring-learning-centers
   const catMatch = path.match(/^\/(plano|frisco)\/([a-z0-9-]+)\/?$/);
   if (catMatch) {
     currentCity = catMatch[1];
@@ -42,38 +52,61 @@ function route() {
     return;
   }
 
-  // Fallback to home
+  if (path === '/saved') { renderSavedPage(app); return; }
+
   renderHome(app);
 }
 
+function getSavedCount() {
+  try { return JSON.parse(localStorage.getItem('kc_saved') || '[]').length; } catch(e) { return 0; }
+}
+
 function renderHome(app) {
-  const featured = allBusinesses.filter(b => b.rating >= 4.5).slice(0, 6);
+  const featured = allBusinesses
+    .filter(b => b.rating >= 4.5 && b.image_url)
+    .sort((a, b) => (b.review_count || 0) - (a.review_count || 0))
+    .slice(0, 6);
+
+  const totalCount = allBusinesses.length;
+  const catCount = CATEGORIES.length;
+  const savedCount = getSavedCount();
 
   app.innerHTML = `
     <div class="hero">
-      <h1>Find the Best for Your Kids</h1>
-      <p>Smart choices for busy parents in Plano & Frisco, TX</p>
-      <div class="search-box">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-        </svg>
-        <input type="text" id="search-input" placeholder="Search tutoring, camps, dentists..." autocomplete="off">
+      <div class="hero-bg" style="background-image:url('${HERO_IMG}')"></div>
+      <div class="hero-content">
+        <h1>Discover the best places for your <em>little ones</em></h1>
+        <p>Trusted by parents in Plano & Frisco, TX — camps, classes, doctors, and more.</p>
+        <div class="search-box">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+          </svg>
+          <input type="text" id="search-input" placeholder="Search tutoring, swim lessons, party venues..." autocomplete="off">
+        </div>
+        <div class="cat-shortcuts">
+          ${CATEGORIES.map(c => `<a href="/plano/${c.slug}" class="cat-shortcut">${c.name}</a>`).join('')}
+        </div>
       </div>
-      <div class="cat-shortcuts">
-        ${CATEGORIES.map(c => `<a href="/plano/${c.slug}" class="cat-shortcut">${c.name}</a>`).join('')}
-      </div>
+    </div>
+
+    <div class="stats-bar">
+      <div class="stat"><div class="stat-num">${totalCount}+</div><div class="stat-label">Verified Listings</div></div>
+      <div class="stat"><div class="stat-num">${catCount}</div><div class="stat-label">Categories</div></div>
+      <div class="stat"><div class="stat-num">2</div><div class="stat-label">Cities</div></div>
     </div>
 
     <div class="section">
       <div class="section-header">
-        <h2>Browse Categories</h2>
+        <h2>Browse by Category</h2>
       </div>
       <div class="cat-grid">
-        ${CATEGORIES.map(c => {
+        ${CATEGORIES.map((c, i) => {
           const count = allBusinesses.filter(b => b.category === c.name).length;
+          const color = CAT_COLORS[i % CAT_COLORS.length];
+          const emoji = CAT_EMOJIS[c.name] || '&#x2B50;';
           return `
-          <a href="/plano/${c.slug}" class="cat-card">
-            <div class="cat-card-icon">${getCategoryIcon(c.icon)}</div>
+          <a href="/plano/${c.slug}" class="cat-card" data-color="${color}">
+            <div class="cat-card-icon">${emoji}</div>
             <h3>${c.name}</h3>
             <p>${count} listings in Plano & Frisco</p>
           </a>`;
@@ -84,7 +117,7 @@ function renderHome(app) {
     ${featured.length ? `
     <div class="section">
       <div class="section-header">
-        <h2>Top Rated</h2>
+        <h2>Top Rated by Parents</h2>
       </div>
       <div class="biz-grid">
         ${featured.map(renderBizCard).join('')}
@@ -93,18 +126,17 @@ function renderHome(app) {
 
     <div class="section">
       <div class="subscribe-section">
-        <h2>Get Weekly Updates</h2>
-        <p>Kid-friendly picks delivered to your inbox every week.</p>
+        <h2>Join Plano & Frisco Parents</h2>
+        <p>Get our weekly picks — hidden gems, new openings, and things to do with kids this weekend.</p>
         <form class="subscribe-form" id="subscribe-form">
-          <input type="email" name="email" placeholder="Your email" required>
-          <button type="submit">Subscribe</button>
+          <input type="email" name="email" placeholder="Your email address" required>
+          <button type="submit">Count Me In</button>
         </form>
         <p id="subscribe-msg" style="margin-top:12px;display:none;"></p>
       </div>
     </div>
   `;
 
-  // Search handler
   const searchInput = document.getElementById('search-input');
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
@@ -120,7 +152,6 @@ function renderHome(app) {
     });
   }
 
-  // Subscribe handler
   const form = document.getElementById('subscribe-form');
   if (form) form.addEventListener('submit', handleSubscribe);
 }
@@ -140,11 +171,13 @@ function renderCityPage(app, citySlug) {
     </div>
     <div class="section">
       <div class="cat-grid">
-        ${CATEGORIES.map(c => {
+        ${CATEGORIES.map((c, i) => {
           const count = businesses.filter(b => b.category === c.name).length;
+          const color = CAT_COLORS[i % CAT_COLORS.length];
+          const emoji = CAT_EMOJIS[c.name] || '&#x2B50;';
           return `
-          <a href="/${citySlug}/${c.slug}" class="cat-card">
-            <div class="cat-card-icon">${getCategoryIcon(c.icon)}</div>
+          <a href="/${citySlug}/${c.slug}" class="cat-card" data-color="${color}">
+            <div class="cat-card-icon">${emoji}</div>
             <h3>${c.name}</h3>
             <p>${count} listings</p>
           </a>`;
@@ -170,8 +203,6 @@ function renderCategoryPage(app, citySlug, catSlug) {
   const catName = cat ? cat.name : catSlug;
 
   let businesses = allBusinesses.filter(b => b.category === catName);
-
-  // Filter by city if not showing both
   const cityFiltered = businesses.filter(b => b.city.toLowerCase() === citySlug);
 
   app.innerHTML = `
@@ -202,7 +233,6 @@ function renderCategoryPage(app, citySlug, catSlug) {
     </div>
   `;
 
-  // Filter handlers
   const filterCity = document.getElementById('filter-city');
   const filterSort = document.getElementById('filter-sort');
 
@@ -226,8 +256,30 @@ function renderCategoryPage(app, citySlug, catSlug) {
   filterSort.addEventListener('change', applyFilters);
 }
 
+function renderSavedPage(app) {
+  let savedIds = [];
+  try { savedIds = JSON.parse(localStorage.getItem('kc_saved') || '[]'); } catch(e) {}
+  const saved = allBusinesses.filter(b => savedIds.includes(b.id));
+
+  app.innerHTML = `
+    <div class="page-header">
+      <div class="page-header-inner">
+        <div class="breadcrumb"><a href="/">Home</a> / Saved</div>
+        <h1>Your Saved Places</h1>
+        <p>${saved.length} places saved</p>
+      </div>
+    </div>
+    <div class="section">
+      <div class="biz-grid">
+        ${saved.length ? saved.map(renderBizCard).join('') :
+          '<div class="empty-state"><h3>No saved places yet</h3><p>Browse listings and tap the bookmark icon to save places for later.</p></div>'}
+      </div>
+    </div>
+  `;
+}
+
 function renderSearchResults(results) {
-  const section = document.querySelector('.section:nth-child(2)');
+  const section = document.querySelector('.section:nth-child(3)');
   if (!section) return;
   section.innerHTML = `
     <div class="section-header">
@@ -242,9 +294,6 @@ function renderSearchResults(results) {
 }
 
 function renderBizCard(biz) {
-  const catObj = CATEGORIES.find(c => c.name === biz.category);
-  const catSlug = catObj ? catObj.slug : '';
-
   return `
     <a href="/go/${biz.id}" class="biz-card">
       ${biz.image_url ?
@@ -259,25 +308,11 @@ function renderBizCard(biz) {
             <span>${biz.rating}</span>
             ${biz.review_count ? `<span>(${biz.review_count})</span>` : ''}
           </div>` : ''}
-        <div class="biz-card-location">${escHtml(biz.city)}${biz.price_range ? ' — ' + escHtml(biz.price_range) : ''}</div>
+        <div class="biz-card-location">${escHtml(biz.city)}${biz.address ? ', TX' : ''}${biz.price_range ? ' — ' + escHtml(biz.price_range) : ''}</div>
         <span class="biz-card-cta">View Details</span>
       </div>
     </a>
   `;
-}
-
-function getCategoryIcon(icon) {
-  const icons = {
-    'book-open': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>',
-    'activity': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
-    'gift': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>',
-    'sun': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>',
-    'heart': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
-    'home': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
-    'utensils': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><line x1="7" y1="2" x2="7" y2="22"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>',
-    'scissors': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>'
-  };
-  return icons[icon] || icons['activity'];
 }
 
 function getCategoryEmoji(category) {
@@ -309,7 +344,7 @@ async function handleSubscribe(e) {
     const data = await res.json();
     msg.style.display = 'block';
     msg.style.color = '#3BA7A0';
-    msg.textContent = data.message || 'Subscribed!';
+    msg.textContent = data.message || "You're in! Welcome to the community.";
     form.reset();
   } catch (err) {
     msg.style.display = 'block';
