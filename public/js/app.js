@@ -19,6 +19,28 @@ const CAT_SVGS = {
   'Kids Haircuts & Clothing': `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>`
 };
 
+const CAT_FALLBACK_IMGS = {
+  'Tutoring & Learning Centers':  'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=600&q=75&auto=format&fit=crop',
+  'Kids Activities & Classes':    'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=75&auto=format&fit=crop',
+  'Birthday Party Venues':        'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600&q=75&auto=format&fit=crop',
+  'Summer Camps & After School':  'https://images.unsplash.com/photo-1526976668912-1a811878dd37?w=600&q=75&auto=format&fit=crop',
+  'Pediatric Dentists & Doctors': 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=600&q=75&auto=format&fit=crop',
+  'Daycares & Preschools':        'https://images.unsplash.com/photo-1587691592099-24045742c181?w=600&q=75&auto=format&fit=crop',
+  'Family-Friendly Restaurants':  'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=75&auto=format&fit=crop',
+  'Kids Haircuts & Clothing':     'https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?w=600&q=75&auto=format&fit=crop',
+};
+
+const CAT_HERO_IMGS = {
+  'Tutoring & Learning Centers':  'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=1400&q=70&auto=format&fit=crop',
+  'Kids Activities & Classes':    'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1400&q=70&auto=format&fit=crop',
+  'Birthday Party Venues':        'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=1400&q=70&auto=format&fit=crop',
+  'Summer Camps & After School':  'https://images.unsplash.com/photo-1526976668912-1a811878dd37?w=1400&q=70&auto=format&fit=crop',
+  'Pediatric Dentists & Doctors': 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=1400&q=70&auto=format&fit=crop',
+  'Daycares & Preschools':        'https://images.unsplash.com/photo-1587691592099-24045742c181?w=1400&q=70&auto=format&fit=crop',
+  'Family-Friendly Restaurants':  'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1400&q=70&auto=format&fit=crop',
+  'Kids Haircuts & Clothing':     'https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?w=1400&q=70&auto=format&fit=crop',
+};
+
 async function loadData() {
   try {
     const res = await fetch('/businesses.json');
@@ -205,14 +227,25 @@ function renderCategoryPage(app, citySlug, catSlug) {
 
   let businesses = allBusinesses.filter(b => b.category === catName);
 
+  const heroImg = CAT_HERO_IMGS[catName] || '';
+
   app.innerHTML = `
+    ${heroImg ? `
+    <div class="cat-hero">
+      <div class="cat-hero-bg" style="background-image:url('${heroImg}')"></div>
+      <div class="cat-hero-content">
+        <div class="breadcrumb breadcrumb--light"><a href="/">Home</a><span>/</span><a href="/${citySlug}">${cityName}</a><span>/</span>${catName}</div>
+        <h1>${catName}</h1>
+        <p>${businesses.length} listings in Plano & Frisco</p>
+      </div>
+    </div>` : `
     <div class="page-header">
       <div class="page-header-inner">
         <div class="breadcrumb"><a href="/">Home</a> / <a href="/${citySlug}">${cityName}</a> / ${catName}</div>
         <h1>${catName}</h1>
         <p>${businesses.length} listings in Plano & Frisco</p>
       </div>
-    </div>
+    </div>`}
     <div class="section">
       <div class="filters-bar">
         <select class="filter-select" id="filter-city">
@@ -293,22 +326,30 @@ function renderSearchResults(results) {
 }
 
 function renderBizCard(biz) {
+  const isMapImg = biz.image_url && biz.image_url.includes('maps.google.com');
+  const imgSrc = (!biz.image_url || isMapImg) ? (CAT_FALLBACK_IMGS[biz.category] || '') : biz.image_url;
+  let desc = '';
+  if (biz.description && biz.description.length > 25) {
+    const d = biz.description.trim();
+    if (!/\d{3,}/.test(d) && d.toLowerCase() !== biz.name.toLowerCase() && d.split(' ').length >= 4) {
+      desc = d.substring(0, 90) + (d.length > 90 ? '...' : '');
+    }
+  }
+  const ratingBadge = biz.rating >= 4.8 ? '<span class="biz-badge biz-badge--top">Top Rated</span>' : '';
   return `
     <a href="/go/${biz.id}" class="biz-card">
-      ${biz.image_url ?
-        `<img class="biz-card-img" src="${escHtml(biz.image_url)}" alt="${escHtml(biz.name)}" loading="lazy">` :
-        `<div class="biz-card-placeholder">${getCategoryEmoji(biz.category)}</div>`}
+      <div class="biz-card-img-wrap">
+        <img class="biz-card-img" src="${escHtml(imgSrc)}" alt="${escHtml(biz.name)}" loading="lazy">
+        ${ratingBadge}
+        <div class="biz-card-cat-pill">${escHtml(biz.category)}</div>
+      </div>
       <div class="biz-card-body">
-        <div class="biz-card-cat">${escHtml(biz.category)}</div>
         <div class="biz-card-name">${escHtml(biz.name)}</div>
-        ${biz.rating ? `
-          <div class="biz-card-rating">
-            ${renderStars(biz.rating)}
-            <span>${biz.rating}</span>
-            ${biz.review_count ? `<span>(${biz.review_count})</span>` : ''}
-          </div>` : ''}
-        <div class="biz-card-location">${escHtml(biz.city)}${biz.address ? ', TX' : ''}${biz.price_range ? ' — ' + escHtml(biz.price_range) : ''}</div>
-        <span class="biz-card-cta">View Details</span>
+        ${desc ? `<p class="biz-card-desc">${escHtml(desc)}</p>` : ''}
+        <div class="biz-card-meta">
+          ${biz.rating ? `<div class="biz-card-rating">${renderStars(biz.rating)}<span class="biz-rating-num">${biz.rating}</span>${biz.review_count ? `<span class="biz-review-ct">(${biz.review_count.toLocaleString()})</span>` : ''}</div>` : ''}
+          <span class="biz-card-city">${escHtml(biz.city)}, TX</span>
+        </div>
       </div>
     </a>
   `;
