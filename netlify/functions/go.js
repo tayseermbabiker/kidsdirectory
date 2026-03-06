@@ -24,8 +24,19 @@ function escHtml(str) {
 }
 
 function mapsUrl(address, name, city) {
-  const q = address || `${name}, ${city || 'Plano'}, TX`;
+  const q = cleanAddress(address) || `${name}, ${city || 'Plano'}, TX`;
   return `https://www.google.com/maps/search/${encodeURIComponent(q)}`;
+}
+
+function cleanAddress(raw) {
+  if (!raw) return '';
+  // Extract just the street address part — strip rating, phone, status, business name junk
+  // Look for pattern like "1234 Street Name" up to a reasonable end
+  const match = raw.match(/(\d+\s+[\w\s]+(?:st|ave|blvd|rd|dr|ln|way|pl|pkwy|hwy|ct|cir|trl)[\w\s,#]*(?:suite|ste|bldg|unit|#)?\s*\d*)/i);
+  if (match) return match[1].trim().replace(/,\s*$/, '');
+  // If no pattern, check if it's short enough to be a real address
+  if (raw.length < 80 && !raw.match(/\d\.\d|reviews?|closed|open/i)) return raw;
+  return '';
 }
 
 function getCatSlug(category) {
@@ -323,10 +334,6 @@ exports.handler = async (event) => {
     let explainerHtml = '';
     if (explainer) {
       explainerHtml = `
-        <div class="section explainer">
-          <h2>${escHtml(explainer.title)}</h2>
-          <p class="explainer-text">${escHtml(explainer.text)}</p>
-        </div>
         <div class="section">
           <h2>Questions to Ask Before You Visit</h2>
           <ul class="questions-list">
@@ -461,13 +468,6 @@ exports.handler = async (event) => {
     .quick-btn-outline:hover { border-color:#3BA7A0; color:#3BA7A0; }
     .quick-btn svg { width:16px; height:16px; }
 
-    .info-cards { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:32px; }
-    .info-card { padding:16px; background:#fff; border-radius:10px; border:1px solid #E4E4E7; }
-    .info-card-label { font-size:0.7rem; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:#999; margin-bottom:6px; }
-    .info-card-value { font-size:0.9rem; color:#2E2E2E; word-break:break-word; }
-    .info-card-value a { color:#3BA7A0; text-decoration:none; }
-    .info-card-value a:hover { text-decoration:underline; }
-
     .about { margin-bottom:40px; }
     .about h2 { font-family:'Poppins',sans-serif; font-size:1.3rem; font-weight:600; color:#2E2E2E; margin-bottom:12px; }
     .about p { font-size:0.95rem; color:#555; line-height:1.8; }
@@ -496,7 +496,6 @@ exports.handler = async (event) => {
     .review::before { content:open-quote; position:absolute; top:8px; left:16px; font-size:2.5rem; color:rgba(59,167,160,0.15); font-family:Georgia,serif; line-height:1; }
     .review p { font-size:0.9rem; color:#555; line-height:1.7; font-style:italic; padding-left:20px; }
 
-    .explainer-text { font-size:0.92rem; color:#555; line-height:1.8; }
     .questions-list { list-style:none; padding:0; }
     .questions-list li { position:relative; padding:10px 0 10px 28px; border-bottom:1px solid #F5F5F5; font-size:0.88rem; color:#444; }
     .questions-list li:last-child { border-bottom:none; }
@@ -517,7 +516,6 @@ exports.handler = async (event) => {
 
     @media (max-width:600px) {
       h1 { font-size:1.5rem; }
-      .info-cards { grid-template-columns:1fr; }
       .quick-actions { flex-direction:column; }
       .quick-btn { justify-content:center; }
       .hero-img { max-height:260px; }
@@ -554,7 +552,7 @@ exports.handler = async (event) => {
 
     <div class="cat-badge">${escHtml(f.category || '')}</div>
     <h1>${escHtml(f.name)}</h1>
-    <p class="subtitle">${escHtml(f.city || 'Plano')}, TX${f.address ? ' — ' + escHtml(f.address) : ''}</p>
+    <p class="subtitle">${escHtml(f.city || 'Plano')}, TX${cleanAddress(f.address) ? ' — ' + escHtml(cleanAddress(f.address)) : ''}</p>
 
     ${badgeHtml}
     ${nudgeHtml}
@@ -566,14 +564,6 @@ exports.handler = async (event) => {
       <a class="quick-btn quick-btn-outline" href="${mapsUrl(f.address, f.name, f.city)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Get Directions</a>
     </div>
 
-    <div class="info-cards">
-      ${f.address ? `<div class="info-card"><div class="info-card-label">Address</div><div class="info-card-value"><a href="${mapsUrl(f.address, f.name, f.city)}" target="_blank" rel="noopener">${escHtml(f.address)}</a></div></div>` : ''}
-      ${f.phone ? `<div class="info-card"><div class="info-card-label">Phone</div><div class="info-card-value"><a href="tel:${escHtml(f.phone.replace(/[^+\d]/g, ''))}">${escHtml(f.phone)}</a></div></div>` : ''}
-      ${f.website ? `<div class="info-card"><div class="info-card-label">Website</div><div class="info-card-value"><a href="${escHtml(f.website)}" target="_blank" rel="noopener">${escHtml(f.website.replace(/^https?:\/\//, '').replace(/\/$/, ''))}</a></div></div>` : ''}
-      ${f.price_range ? `<div class="info-card"><div class="info-card-label">Price Range</div><div class="info-card-value">${escHtml(f.price_range)}</div></div>` : ''}
-      <div class="info-card"><div class="info-card-label">City</div><div class="info-card-value">${escHtml(f.city || 'Plano')}, TX</div></div>
-      <div class="info-card"><div class="info-card-label">Source</div><div class="info-card-value">${escHtml(f.source || 'Google Maps')}</div></div>
-    </div>
 
     ${seasonalHtml}
 
