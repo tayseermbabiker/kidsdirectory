@@ -512,7 +512,12 @@ exports.handler = async (event) => {
     .related-name { font-family:'Poppins',sans-serif; font-size:0.95rem; font-weight:500; color:#2E2E2E; }
     .related-meta { font-size:0.8rem; color:#6A6A6A; margin-top:2px; }
 
-    .footer { margin-top:80px; padding:24px; border-top:1px solid #E4E4E7; text-align:center; font-size:0.75rem; color:#6A6A6A; background:#fff; }
+    .page-meta { display:flex; align-items:center; justify-content:center; gap:16px; padding:20px 24px; margin-top:48px; border-top:1px solid #E4E4E7; font-size:0.78rem; color:#999; }
+    .meta-verified { display:inline-flex; align-items:center; gap:4px; }
+    .meta-link { color:#6A6A6A; text-decoration:none; border-bottom:1px dashed #CCC; }
+    .meta-link:hover { color:#3BA7A0; border-color:#3BA7A0; }
+
+    .footer { margin-top:0; padding:24px; border-top:1px solid #E4E4E7; text-align:center; font-size:0.75rem; color:#6A6A6A; background:#fff; }
 
     @media (max-width:600px) {
       h1 { font-size:1.5rem; }
@@ -562,6 +567,7 @@ exports.handler = async (event) => {
       ${f.website ? `<a class="quick-btn quick-btn-primary" href="${escHtml(f.website)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Visit Website</a>` : ''}
       ${f.phone ? `<a class="quick-btn quick-btn-outline" href="tel:${escHtml(f.phone.replace(/[^+\d]/g, ''))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>${escHtml(f.phone)}</a>` : ''}
       <a class="quick-btn quick-btn-outline" href="${mapsUrl(f.address, f.name, f.city)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Get Directions</a>
+      <button class="quick-btn quick-btn-outline" onclick="sharePage()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share</button>
     </div>
 
 
@@ -575,6 +581,11 @@ exports.handler = async (event) => {
     ${mapHtml}
     ${explainerHtml}
     ${relatedHtml}
+  </div>
+
+  <div class="page-meta">
+    ${f.scraped_at ? `<span class="meta-verified">Last verified: ${new Date(f.scraped_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>` : ''}
+    <a href="mailto:hello@kidcompass.com?subject=Edit suggestion for ${encodeURIComponent(f.name)}&body=Business: ${encodeURIComponent(f.name)}%0AWhat needs updating:%0A" class="meta-link">Suggest an edit</a>
   </div>
 
   <div class="footer">KidCompass — Plano & Frisco, TX</div>
@@ -598,6 +609,19 @@ exports.handler = async (event) => {
       const txt = document.getElementById('saveTxt');
       if (isSaved()) { btn.classList.add('saved'); txt.textContent = 'Saved'; }
       else { btn.classList.remove('saved'); txt.textContent = 'Save'; }
+    }
+    function sharePage() {
+      const data = { title: document.title, url: window.location.href };
+      if (navigator.share) {
+        navigator.share(data).catch(() => {});
+      } else {
+        navigator.clipboard.writeText(data.url).then(() => {
+          const btn = document.querySelector('[onclick="sharePage()"]');
+          const orig = btn.innerHTML;
+          btn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Link Copied!';
+          setTimeout(() => { btn.innerHTML = orig; }, 2000);
+        });
+      }
     }
     updateSaveBtn();
   </script>
