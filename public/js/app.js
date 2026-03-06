@@ -200,22 +200,20 @@ function renderCategoryPage(app, citySlug, catSlug) {
   const catName = cat ? cat.name : catSlug;
 
   let businesses = allBusinesses.filter(b => b.category === catName);
-  const cityFiltered = businesses.filter(b => b.city.toLowerCase() === citySlug);
 
   app.innerHTML = `
     <div class="page-header">
       <div class="page-header-inner">
         <div class="breadcrumb"><a href="/">Home</a> / <a href="/${citySlug}">${cityName}</a> / ${catName}</div>
-        <h1>${catName} in ${cityName}</h1>
-        <p>${cityFiltered.length} listings found</p>
+        <h1>${catName}</h1>
+        <p>${businesses.length} listings in Plano & Frisco</p>
       </div>
     </div>
     <div class="section">
       <div class="filters-bar">
         <select class="filter-select" id="filter-city">
-          <option value="${citySlug}">${cityName}</option>
           <option value="all">All Cities</option>
-          ${CITIES.filter(c => c.slug !== citySlug).map(c => `<option value="${c.slug}">${c.name}</option>`).join('')}
+          ${CITIES.map(c => `<option value="${c.slug}"${c.slug === citySlug ? ' selected' : ''}>${c.name}</option>`).join('')}
         </select>
         <select class="filter-select" id="filter-sort">
           <option value="rating">Highest Rated</option>
@@ -224,7 +222,7 @@ function renderCategoryPage(app, citySlug, catSlug) {
         </select>
       </div>
       <div class="biz-grid" id="results-grid">
-        ${cityFiltered.length ? cityFiltered.map(renderBizCard).join('') :
+        ${businesses.length ? businesses.map(renderBizCard).join('') :
           '<div class="empty-state"><h3>No listings yet</h3><p>Check back soon!</p></div>'}
       </div>
     </div>
