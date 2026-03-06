@@ -281,15 +281,20 @@ exports.handler = async (event) => {
         ${f.review_count ? `<span class="rating-count">(${f.review_count} reviews)</span>` : ''}
       </div>` : '';
 
-    // --- SERVICES ---
-    let servicesHtml = '';
+    // --- AT A GLANCE (parsed from services) ---
+    let glanceHtml = '';
     if (f.services) {
       const items = f.services.split(',').map(s => s.trim()).filter(Boolean);
+      // Separate age range from other tags
+      const ageTag = items.find(s => /ages?\s*\d/i.test(s));
+      const otherTags = items.filter(s => s !== ageTag);
+
       if (items.length) {
-        servicesHtml = `
-          <div class="section">
-            <h2>Services & Amenities</h2>
-            <div class="tags">${items.map(s => `<span class="tag">${escHtml(s)}</span>`).join('')}</div>
+        glanceHtml = `
+          <div class="section glance-section">
+            <h2>At a Glance</h2>
+            ${ageTag ? `<div class="glance-age"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3BA7A0" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg><span>${escHtml(ageTag)}</span></div>` : ''}
+            <div class="tags">${otherTags.map(s => `<span class="tag">${escHtml(s)}</span>`).join('')}</div>
           </div>`;
       }
     }
@@ -315,7 +320,19 @@ exports.handler = async (event) => {
     // --- REVIEWS ---
     let reviewsHtml = '';
     if (f.reviews) {
-      const snippets = f.reviews.split('---').map(s => s.trim()).filter(Boolean);
+      const snippets = f.reviews.split('---').map(s => s.trim()).filter(Boolean)
+        .map(s => {
+          // Trim at last complete sentence if truncated with ...
+          if (s.endsWith('…') || s.endsWith('...')) {
+            const cleaned = s.replace(/[.…]+$/, '');
+            const lastPeriod = cleaned.lastIndexOf('.');
+            const lastExcl = cleaned.lastIndexOf('!');
+            const cutoff = Math.max(lastPeriod, lastExcl);
+            if (cutoff > 20) return cleaned.substring(0, cutoff + 1);
+          }
+          return s;
+        }).filter(s => s.length > 20);
+
       if (snippets.length) {
         reviewsHtml = `
           <div class="section">
@@ -329,11 +346,15 @@ exports.handler = async (event) => {
       }
     }
 
-    // --- CATEGORY EXPLAINER + QUESTIONS ---
+    // --- CATEGORY INSIGHT + QUESTIONS ---
     const explainer = getCategoryExplainer(f.category);
     let explainerHtml = '';
     if (explainer) {
       explainerHtml = `
+        <div class="section insight-section">
+          <h2>How ${escHtml(f.category)} Work</h2>
+          <p class="insight-text">${explainer.text}</p>
+        </div>
         <div class="section">
           <h2>Questions to Ask Before You Visit</h2>
           <ul class="questions-list">
@@ -481,9 +502,16 @@ exports.handler = async (event) => {
     .section { margin-bottom:40px; }
     .section h2 { font-family:'Poppins',sans-serif; font-size:1.3rem; font-weight:600; color:#2E2E2E; margin-bottom:16px; padding-bottom:8px; border-bottom:1px solid #E4E4E7; }
 
+    .glance-section { background:#F9FFFE; border:1px solid #D0EDEB; border-radius:12px; padding:24px; }
+    .glance-section h2 { border-bottom:none; padding-bottom:0; margin-bottom:12px; }
+    .glance-age { display:inline-flex; align-items:center; gap:8px; padding:8px 16px; background:#fff; border:2px solid #3BA7A0; border-radius:24px; font-size:0.9rem; font-weight:600; color:#2d8a84; margin-bottom:14px; }
     .tags { display:flex; flex-wrap:wrap; gap:8px; }
     .tag { display:inline-block; padding:6px 14px; background:#fff; border:1px solid #E4E4E7; border-radius:20px; font-size:0.8rem; color:#555; transition:all 0.15s; }
     .tag:hover { border-color:#3BA7A0; color:#3BA7A0; }
+
+    .insight-section { background:#FAFAFA; border:1px solid #E4E4E7; border-radius:12px; padding:24px; }
+    .insight-section h2 { border-bottom:none; padding-bottom:0; margin-bottom:12px; }
+    .insight-text { font-size:0.9rem; color:#555; line-height:1.8; }
 
     .hours-grid { display:flex; flex-direction:column; gap:0; background:#fff; border-radius:10px; border:1px solid #E4E4E7; overflow:hidden; }
     .hours-row { display:flex; justify-content:space-between; padding:10px 16px; font-size:0.85rem; border-bottom:1px solid #F5F5F5; }
@@ -571,15 +599,13 @@ exports.handler = async (event) => {
     </div>
 
 
-    ${seasonalHtml}
-
+    ${glanceHtml}
     ${f.description ? `<div class="about"><h2>About ${escHtml(f.name)}</h2><p>${f.description.replace(/\n/g, '<br>')}</p></div>` : ''}
-
-    ${servicesHtml}
-    ${hoursHtml}
     ${reviewsHtml}
-    ${mapHtml}
+    ${hoursHtml}
+    ${seasonalHtml}
     ${explainerHtml}
+    ${mapHtml}
     ${relatedHtml}
   </div>
 
