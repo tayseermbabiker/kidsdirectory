@@ -47,6 +47,8 @@ async function exportBusinesses() {
     source: r.fields.source || '',
     take: r.fields.take || '',
     price_note: r.fields.price_note || '',
+    what_to_expect: r.fields.what_to_expect || '',
+    good_fit: r.fields.good_fit || '',
     scraped_at: r.fields.scraped_at || ''
   }));
 

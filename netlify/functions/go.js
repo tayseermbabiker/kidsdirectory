@@ -89,19 +89,24 @@ function parseServices(services) {
   };
 }
 
-// --- TRIM REVIEWS AT COMPLETE SENTENCES ---
+// --- TRIM REVIEWS: complete sentences, max 2 sentences each ---
 function cleanReviews(raw) {
   if (!raw) return [];
   return raw.split('---').map(s => s.trim()).filter(Boolean)
     .map(s => {
-      if (s.endsWith('…') || s.endsWith('...')) {
-        const cleaned = s.replace(/[.…]+$/, '');
-        const lastPeriod = cleaned.lastIndexOf('.');
-        const lastExcl = cleaned.lastIndexOf('!');
-        const cutoff = Math.max(lastPeriod, lastExcl);
-        if (cutoff > 20) return cleaned.substring(0, cutoff + 1);
+      // Strip trailing ellipsis
+      let cleaned = s.replace(/\s*[…]+\s*$/, '').replace(/\s*\.{3,}\s*$/, '');
+      // Find sentence boundaries
+      const sentences = cleaned.match(/[^.!?]*[.!?]+/g);
+      if (sentences && sentences.length > 2) {
+        return sentences.slice(0, 2).join('').trim();
       }
-      return s;
+      // If truncated, cut at last complete sentence
+      const lastPeriod = cleaned.lastIndexOf('.');
+      const lastExcl = cleaned.lastIndexOf('!');
+      const cutoff = Math.max(lastPeriod, lastExcl);
+      if (cutoff > 20 && cutoff < cleaned.length - 1) return cleaned.substring(0, cutoff + 1);
+      return cleaned;
     }).filter(s => s.length > 30);
 }
 
@@ -217,18 +222,33 @@ exports.handler = async (event) => {
         </div>`;
     }
 
+    // --- WHAT TO EXPECT ---
+    const expectHtml = f.what_to_expect ? `
+      <div class="section expect-section">
+        <h2>What to Expect</h2>
+        <p>${f.what_to_expect.replace(/\n/g, '<br>')}</p>
+      </div>` : '';
+
+    // --- IS THIS RIGHT FOR YOUR CHILD? ---
+    const fitItems = f.good_fit ? f.good_fit.split('\n').map(s => s.trim()).filter(Boolean) : [];
+    const fitHtml = fitItems.length ? `
+      <div class="section fit-section">
+        <h2>Is This a Good Fit?</h2>
+        <p class="fit-intro">This place might be right for you if:</p>
+        <ul class="fit-list">
+          ${fitItems.map(item => `<li>${escHtml(item)}</li>`).join('')}
+        </ul>
+      </div>` : '';
+
     // --- MAP ---
     const mapQuery = encodeURIComponent(f.address ? `${f.name}, ${f.address}` : `${f.name}, ${f.city || 'Plano'}, TX`);
     const mapHtml = `
-      <div class="section">
-        <h2>Location</h2>
-        <div class="map-wrap">
-          <iframe
-            width="100%" height="250" style="border:0; border-radius:8px;"
-            loading="lazy" referrerpolicy="no-referrer-when-downgrade"
-            src="https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${mapQuery}">
-          </iframe>
-        </div>
+      <div class="map-wrap">
+        <iframe
+          width="100%" height="220" style="border:0; border-radius:8px;"
+          loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+          src="https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${mapQuery}">
+        </iframe>
       </div>`;
 
     // --- RELATED (enriched with tags) ---
@@ -352,6 +372,17 @@ exports.handler = async (event) => {
     .tags { display:flex; flex-wrap:wrap; gap:6px; }
     .tag { display:inline-block; padding:5px 12px; background:#fff; border:1px solid #E4E4E7; border-radius:16px; font-size:0.78rem; color:#555; }
 
+    .expect-section p { font-size:0.88rem; color:#444; line-height:1.8; }
+
+    .fit-section { background:#FAFCFF; border:1px solid #D6E4F0; border-radius:12px; padding:20px; }
+    .fit-section h2 { border-bottom:none; padding-bottom:0; margin-bottom:8px; }
+    .fit-intro { font-size:0.82rem; color:#6A6A6A; margin-bottom:12px; }
+    .fit-list { list-style:none; padding:0; }
+    .fit-list li { position:relative; padding:8px 0 8px 28px; font-size:0.85rem; color:#333; border-bottom:1px solid #EEF2F7; }
+    .fit-list li:last-child { border-bottom:none; }
+    .fit-list li::before { content:''; position:absolute; left:0; top:11px; width:18px; height:18px; background:#E8F5E9; border-radius:50%; }
+    .fit-list li::after { content:''; position:absolute; left:5px; top:15px; width:8px; height:5px; border-left:2px solid #4CAF50; border-bottom:2px solid #4CAF50; transform:rotate(-45deg); }
+
     .hours-grid { display:flex; flex-direction:column; background:#fff; border-radius:10px; border:1px solid #E4E4E7; overflow:hidden; }
     .hours-row { display:flex; justify-content:space-between; padding:9px 16px; font-size:0.82rem; border-bottom:1px solid #F5F5F5; }
     .hours-row:last-child { border-bottom:none; }
@@ -434,6 +465,8 @@ exports.handler = async (event) => {
     ${takeHtml}
     ${compHtml}
     ${glanceHtml}
+    ${expectHtml}
+    ${fitHtml}
     ${reviewsHtml}
     ${hoursHtml}
     ${mapHtml}
