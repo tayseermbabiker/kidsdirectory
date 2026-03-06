@@ -46,7 +46,8 @@ async function scrapeGoogleMaps(context, query, category) {
   const page = await context.newPage();
 
   try {
-    const searchUrl = `https://www.google.com/maps/search/${encodeURIComponent(query)}`;
+    // Force English with hl=en
+    const searchUrl = `https://www.google.com/maps/search/${encodeURIComponent(query)}?hl=en`;
     console.log(`  Searching: ${query}`);
     await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
     await sleep(4000);
@@ -76,8 +77,16 @@ async function scrapeGoogleMaps(context, query, category) {
           const ratingMatch = ratingLabel.match(/([\d.]+)/);
           const rating = ratingMatch ? parseFloat(ratingMatch[1]) : null;
 
-          const reviewMatch = ratingLabel.match(/(\d[\d,]*)\s*review/i);
-          const reviewCount = reviewMatch ? parseInt(reviewMatch[1].replace(',', '')) : null;
+          // Match both English "reviews" and any numeric pattern
+          const reviewMatch = ratingLabel.match(/(\d[\d,]*)\s*review/i) || ratingLabel.match(/([\d,]+)/g);
+          let reviewCount = null;
+          if (reviewMatch) {
+            // Take the second number if present (first is rating), otherwise first
+            const nums = ratingLabel.match(/[\d,]+/g);
+            if (nums && nums.length >= 2) {
+              reviewCount = parseInt(nums[1].replace(/,/g, ''));
+            }
+          }
 
           const priceEl = parent.querySelector('span:has(> span)');
           let priceRange = null;
@@ -113,10 +122,13 @@ async function scrapeGoogleMaps(context, query, category) {
       try {
         if (!biz.href) continue;
         const detailPage = await context.newPage();
-        await detailPage.goto(biz.href, { waitUntil: 'domcontentloaded', timeout: 20000 });
+        // Force English on detail page too
+        const detailUrl = biz.href.includes('?') ? biz.href + '&hl=en' : biz.href + '?hl=en';
+        await detailPage.goto(detailUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
         await sleep(3000);
 
-        const details = await detailPage.evaluate(() => {
+        // --- BASIC INFO ---
+        const basicInfo = await detailPage.evaluate(() => {
           const phoneEl = document.querySelector('button[data-item-id*="phone"] div.fontBodyMedium');
           const phone = phoneEl ? phoneEl.textContent.trim() : '';
           const webEl = document.querySelector('a[data-item-id="authority"]');
@@ -127,10 +139,122 @@ async function scrapeGoogleMaps(context, query, category) {
           const description = descEl ? descEl.textContent.trim() : '';
           const photoEl = document.querySelector('button[jsaction*="heroHeaderImage"] img');
           const photo = photoEl ? photoEl.getAttribute('src') : '';
-          return { phone, website, address, description, photo };
+
+          // Business type/category shown under name
+          const typeEl = document.querySelector('button[jsaction*="category"]');
+          const bizType = typeEl ? typeEl.textContent.trim() : '';
+
+          return { phone, website, address, description, photo, bizType };
         });
 
-        const city = extractCity(details.address || biz.address);
+        // --- HOURS: click to expand ---
+        const hoursBtn = await detailPage.$('button[data-item-id="oh"], div[aria-label*="hour" i], button[aria-label*="hour" i]');
+        if (hoursBtn) {
+          try { await hoursBtn.click(); await sleep(1500); } catch (e) {}
+        }
+
+        const hours = await detailPage.evaluate(() => {
+          const rows = [];
+          const trs = document.querySelectorAll('table.eK4R0e tr, table.WgFkxc tr');
+          trs.forEach(tr => {
+            const cells = tr.querySelectorAll('td');
+            if (cells.length >= 2) {
+              const day = cells[0].textContent.trim();
+              const time = cells[1].textContent.trim();
+              if (day && time) rows.push(`${day}: ${time}`);
+            }
+          });
+          if (rows.length) return rows.join('\n');
+          const els = document.querySelectorAll('[aria-label]');
+          for (const el of els) {
+            const label = el.getAttribute('aria-label') || '';
+            if (label.includes('Monday') && label.includes('Tuesday')) return label;
+          }
+          return '';
+        }).catch(() => '');
+
+        // --- ABOUT TAB: services, accessibility, highlights ---
+        const aboutTab = await detailPage.$('button[aria-label="About"]');
+        if (aboutTab) {
+          try { await aboutTab.click(); await sleep(2000); } catch (e) {}
+        }
+
+        const aboutData = await detailPage.evaluate(() => {
+          const services = [];
+          const accessibility = [];
+          const highlights = [];
+
+          // All attribute sections
+          const sections = document.querySelectorAll('div[role="region"]');
+          sections.forEach(section => {
+            const heading = section.querySelector('h2, h3, [role="heading"]');
+            const headingText = heading ? heading.textContent.trim().toLowerCase() : '';
+
+            const items = section.querySelectorAll('li span, div[class*="attr"] span');
+            items.forEach(el => {
+              const text = el.textContent.trim();
+              if (!text || text.length < 3 || text.length > 80 || text.startsWith('No ')) return;
+
+              if (headingText.includes('accessib')) {
+                accessibility.push(text);
+              } else if (headingText.includes('highlight') || headingText.includes('amenit') || headingText.includes('offering')) {
+                highlights.push(text);
+              } else {
+                services.push(text);
+              }
+            });
+          });
+
+          // Also grab general attributes that aren't in sections
+          const allAttrs = document.querySelectorAll('div[aria-label] ul li, div[class*="attr"] span');
+          allAttrs.forEach(el => {
+            const t = el.textContent.trim();
+            if (t && t.length > 2 && t.length < 60 && !services.includes(t) && !t.startsWith('No ')) {
+              services.push(t);
+            }
+          });
+
+          return {
+            services: [...new Set(services)].slice(0, 20).join(', '),
+            accessibility: [...new Set(accessibility)].slice(0, 10).join(', '),
+            highlights: [...new Set(highlights)].slice(0, 10).join(', '),
+          };
+        }).catch(() => ({ services: '', accessibility: '', highlights: '' }));
+
+        // --- REVIEWS TAB: top review snippets ---
+        const overviewTab = await detailPage.$('button[aria-label="Overview"]');
+        if (overviewTab) {
+          try { await overviewTab.click(); await sleep(1000); } catch (e) {}
+        }
+
+        const reviewsTab = await detailPage.$('button[aria-label="Reviews"]');
+        if (reviewsTab) {
+          try { await reviewsTab.click(); await sleep(2500); } catch (e) {}
+        }
+
+        const reviews = await detailPage.evaluate(() => {
+          const snippets = [];
+          const reviewEls = document.querySelectorAll('span.wiI7pd, div.MyEned span, div[data-review-id] span.wiI7pd');
+          reviewEls.forEach(el => {
+            const text = el.textContent.trim();
+            if (text.length > 30 && text.length < 500) snippets.push(text);
+          });
+          return snippets.slice(0, 3).join('\n---\n');
+        }).catch(() => '');
+
+        // Build rich description
+        let description = basicInfo.description || '';
+        if (aboutData.highlights && !description.includes(aboutData.highlights)) {
+          description = description ? description + '\n\n' + aboutData.highlights : aboutData.highlights;
+        }
+        if (aboutData.accessibility) {
+          description = description ? description + '\n\nAccessibility: ' + aboutData.accessibility : 'Accessibility: ' + aboutData.accessibility;
+        }
+        if (basicInfo.bizType && !description.includes(basicInfo.bizType)) {
+          description = basicInfo.bizType + (description ? '. ' + description : '');
+        }
+
+        const city = extractCity(basicInfo.address || biz.address);
 
         results.push({
           name: biz.name,
@@ -138,18 +262,21 @@ async function scrapeGoogleMaps(context, query, category) {
           category,
           city,
           neighborhood: '',
-          address: details.address || biz.address,
-          phone: details.phone,
-          website: details.website,
-          description: details.description,
-          image_url: details.photo || biz.imageUrl,
+          address: basicInfo.address || biz.address,
+          phone: basicInfo.phone,
+          website: basicInfo.website,
+          description: description.substring(0, 1000),
+          image_url: basicInfo.photo || biz.imageUrl,
           rating: biz.rating,
           review_count: biz.reviewCount,
           price_range: biz.priceRange,
+          services: aboutData.services,
+          hours,
+          reviews,
           source: 'Google Maps'
         });
 
-        console.log(`    + ${biz.name} (${biz.rating || 'N/A'})`);
+        console.log(`    + ${biz.name} (${biz.rating || 'N/A'}) [${aboutData.services ? 'services' : ''}${hours ? ' hours' : ''}${reviews ? ' reviews' : ''}]`);
         await detailPage.close();
         await sleep(2000);
       } catch (e) {
@@ -165,7 +292,7 @@ async function scrapeGoogleMaps(context, query, category) {
 }
 
 async function run() {
-  console.log('=== Kids Directory: Google Maps Scraper ===\n');
+  console.log('=== Kids Directory: Google Maps Scraper (EN) ===\n');
   const { browser, context } = await launchBrowser();
   const allResults = [];
 

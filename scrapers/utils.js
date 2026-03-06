@@ -68,6 +68,8 @@ async function pushToAirtable(businesses) {
         rating: b.rating || null,
         review_count: b.review_count || null,
         price_range: b.price_range || null,
+        services: b.services || '',
+        hours: b.hours || '',
         source: b.source || '',
         click_count: 0,
         created_at: new Date().toISOString().split('T')[0],

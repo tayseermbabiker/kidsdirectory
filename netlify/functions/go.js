@@ -89,6 +89,23 @@ exports.handler = async (event) => {
         </div>`;
     }
 
+    // Reviews
+    let reviewsHtml = '';
+    if (f.reviews) {
+      const snippets = f.reviews.split('---').map(s => s.trim()).filter(Boolean);
+      if (snippets.length) {
+        reviewsHtml = `
+          <div class="section">
+            <h2>What Parents Say</h2>
+            <div class="reviews">${snippets.map(s => `
+              <blockquote class="review">
+                <p>"${escHtml(s)}"</p>
+              </blockquote>`).join('')}
+            </div>
+          </div>`;
+      }
+    }
+
     // Related
     const relatedHtml = related.length > 0 ? `
       <div class="section related">
@@ -178,6 +195,10 @@ exports.handler = async (event) => {
     .hours-day { font-weight:500; color:#2E2E2E; }
     .hours-time { color:#6A6A6A; }
 
+    .reviews { display:flex; flex-direction:column; gap:16px; }
+    .review { padding:20px; background:#fff; border-radius:8px; border:1px solid #E4E4E7; border-left:3px solid #3BA7A0; }
+    .review p { font-size:0.9rem; color:#555; line-height:1.7; font-style:italic; }
+
     .cta-row { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:40px; }
     .cta { display:inline-block; padding:14px 32px; background:#3BA7A0; color:#fff; text-decoration:none; font-size:0.85rem; font-weight:500; border-radius:6px; transition:background 0.2s; }
     .cta:hover { background:#2E8A84; }
@@ -230,6 +251,7 @@ exports.handler = async (event) => {
 
     ${servicesHtml}
     ${hoursHtml}
+    ${reviewsHtml}
     ${relatedHtml}
   </div>
   <div class="footer">KidCompass — Plano & Frisco, TX</div>

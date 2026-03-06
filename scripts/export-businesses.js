@@ -43,6 +43,7 @@ async function exportBusinesses() {
     featured: r.fields.featured || false,
     services: r.fields.services || '',
     hours: r.fields.hours || '',
+    reviews: r.fields.reviews || '',
     source: r.fields.source || ''
   }));
 
