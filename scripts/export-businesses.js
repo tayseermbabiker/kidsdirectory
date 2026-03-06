@@ -44,7 +44,10 @@ async function exportBusinesses() {
     services: r.fields.services || '',
     hours: r.fields.hours || '',
     reviews: r.fields.reviews || '',
-    source: r.fields.source || ''
+    source: r.fields.source || '',
+    take: r.fields.take || '',
+    price_note: r.fields.price_note || '',
+    scraped_at: r.fields.scraped_at || ''
   }));
 
   const output = {
