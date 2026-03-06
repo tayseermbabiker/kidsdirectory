@@ -89,25 +89,38 @@ function parseServices(services) {
   };
 }
 
-// --- TRIM REVIEWS: complete sentences, max 2 sentences each ---
+// --- TRIM REVIEWS: complete sentences, max 2-3 strong sentences ---
 function cleanReviews(raw) {
   if (!raw) return [];
   return raw.split('---').map(s => s.trim()).filter(Boolean)
     .map(s => {
       // Strip trailing ellipsis
       let cleaned = s.replace(/\s*[…]+\s*$/, '').replace(/\s*\.{3,}\s*$/, '');
-      // Find sentence boundaries
-      const sentences = cleaned.match(/[^.!?]*[.!?]+/g);
-      if (sentences && sentences.length > 2) {
-        return sentences.slice(0, 2).join('').trim();
+
+      // Split into sentences — but don't split on abbreviations (Mr. Ms. Dr. etc.)
+      const safed = cleaned.replace(/\b(Mr|Ms|Mrs|Dr|St|Jr|Sr|vs)\./gi, '$1\x00');
+      const sentences = safed.match(/[^.!?]+[.!?]+/g);
+
+      if (sentences) {
+        // Restore abbreviation periods
+        const restored = sentences.map(s => s.replace(/\x00/g, '.'));
+        // Take up to 3 sentences, prefer at least 2
+        const take = restored.slice(0, 3);
+        const result = take.join('').trim();
+        if (result.length > 40) return result;
       }
-      // If truncated, cut at last complete sentence
-      const lastPeriod = cleaned.lastIndexOf('.');
-      const lastExcl = cleaned.lastIndexOf('!');
+
+      // Fallback: find last real sentence end (skip abbreviations)
+      const safedFull = cleaned.replace(/\b(Mr|Ms|Mrs|Dr|St|Jr|Sr|vs)\./gi, '$1\x00');
+      const lastPeriod = safedFull.lastIndexOf('.');
+      const lastExcl = safedFull.lastIndexOf('!');
       const cutoff = Math.max(lastPeriod, lastExcl);
-      if (cutoff > 20 && cutoff < cleaned.length - 1) return cleaned.substring(0, cutoff + 1);
+      if (cutoff > 40) {
+        return cleaned.substring(0, cutoff + 1);
+      }
+
       return cleaned;
-    }).filter(s => s.length > 30);
+    }).filter(s => s.length > 40);
 }
 
 exports.handler = async (event) => {
@@ -238,6 +251,13 @@ exports.handler = async (event) => {
         <ul class="fit-list">
           ${fitItems.map(item => `<li>${escHtml(item)}</li>`).join('')}
         </ul>
+      </div>` : '';
+
+    // --- HOW IT COMPARES ---
+    const comparesHtml = f.how_it_compares ? `
+      <div class="section compares-section">
+        <h2>How It Compares</h2>
+        <p>${f.how_it_compares.replace(/\n/g, '<br>')}</p>
       </div>` : '';
 
     // --- MAP ---
@@ -383,6 +403,8 @@ exports.handler = async (event) => {
     .fit-list li::before { content:''; position:absolute; left:0; top:11px; width:18px; height:18px; background:#E8F5E9; border-radius:50%; }
     .fit-list li::after { content:''; position:absolute; left:5px; top:15px; width:8px; height:5px; border-left:2px solid #4CAF50; border-bottom:2px solid #4CAF50; transform:rotate(-45deg); }
 
+    .compares-section p { font-size:0.88rem; color:#444; line-height:1.8; }
+
     .hours-grid { display:flex; flex-direction:column; background:#fff; border-radius:10px; border:1px solid #E4E4E7; overflow:hidden; }
     .hours-row { display:flex; justify-content:space-between; padding:9px 16px; font-size:0.82rem; border-bottom:1px solid #F5F5F5; }
     .hours-row:last-child { border-bottom:none; }
@@ -467,6 +489,7 @@ exports.handler = async (event) => {
     ${glanceHtml}
     ${expectHtml}
     ${fitHtml}
+    ${comparesHtml}
     ${reviewsHtml}
     ${hoursHtml}
     ${mapHtml}
