@@ -28,6 +28,196 @@ function mapsUrl(address, name, city) {
   return `https://www.google.com/maps/search/${encodeURIComponent(q)}`;
 }
 
+function getCatSlug(category) {
+  const map = {
+    'Tutoring & Learning Centers': 'tutoring-learning-centers',
+    'Kids Activities & Classes': 'kids-activities-classes',
+    'Birthday Party Venues': 'birthday-party-venues',
+    'Summer Camps & After School': 'summer-camps-after-school',
+    'Pediatric Dentists & Doctors': 'pediatric-dentists-doctors',
+    'Daycares & Preschools': 'daycares-preschools',
+    'Family-Friendly Restaurants': 'family-friendly-restaurants',
+    'Kids Haircuts & Clothing': 'kids-haircuts-clothing'
+  };
+  return map[category] || '';
+}
+
+// --- CONFIDENCE BADGE ---
+function getConfidenceBadge(biz, allInCategory) {
+  if (!biz.rating) return '';
+  const rated = allInCategory.filter(b => b.rating);
+  if (rated.length < 3) return '';
+  const sorted = rated.sort((a, b) => {
+    const scoreA = (a.rating || 0) * Math.log10((a.review_count || 1) + 1);
+    const scoreB = (b.rating || 0) * Math.log10((b.review_count || 1) + 1);
+    return scoreB - scoreA;
+  });
+  const rank = sorted.findIndex(b => b.id === biz.id);
+  const pct = rank / sorted.length;
+
+  if (pct <= 0.1 && biz.rating >= 4.5 && (biz.review_count || 0) >= 20) {
+    return { label: 'Top Rated', desc: `Top 10% in ${biz.city} — based on ${biz.review_count} reviews`, color: '#D4A853', icon: 'trophy' };
+  }
+  if (pct <= 0.25 && biz.rating >= 4.3) {
+    return { label: 'Community Favorite', desc: 'Highly rated by local families', color: '#3BA7A0', icon: 'heart' };
+  }
+  if (biz.rating >= 4.5 && (biz.review_count || 0) < 15 && (biz.review_count || 0) >= 3) {
+    return { label: 'Hidden Gem', desc: 'High rating with growing reviews', color: '#F47C6A', icon: 'star' };
+  }
+  if (biz.rating >= 4.0 && (biz.review_count || 0) >= 50) {
+    return { label: 'Well Established', desc: `${biz.review_count}+ reviews from local parents`, color: '#6A6A6A', icon: 'check' };
+  }
+  return '';
+}
+
+// --- HOURS NUDGE ---
+function getHoursNudge(hours) {
+  if (!hours) return '';
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const now = new Date();
+  const todayName = days[now.getDay()];
+  const tomorrowName = days[(now.getDay() + 1) % 7];
+  const satName = 'Saturday';
+
+  const lines = hours.split('\n');
+  let todayLine = '', satLine = '', eveningLines = [];
+
+  for (const line of lines) {
+    const lower = line.toLowerCase();
+    if (lower.includes(todayName.toLowerCase())) todayLine = line;
+    if (lower.includes('saturday')) satLine = line;
+    if (lower.match(/(7|8|9)\s*pm/) || lower.match(/(19|20|21):/)) eveningLines.push(line);
+  }
+
+  const nudges = [];
+  if (todayLine && !todayLine.toLowerCase().includes('closed')) {
+    const time = todayLine.split(':').slice(1).join(':').trim();
+    if (time) nudges.push(`Open today (${todayName}): ${time}`);
+  }
+  if (satLine && !satLine.toLowerCase().includes('closed')) {
+    const time = satLine.split(':').slice(1).join(':').trim();
+    if (time && todayName !== 'Saturday') nudges.push(`Open this Saturday: ${time}`);
+  }
+  if (eveningLines.length > 0) {
+    nudges.push('Evening hours available');
+  }
+  return nudges.slice(0, 2);
+}
+
+// --- SEASONAL CONTENT ---
+function getSeasonalBlock(category) {
+  const month = new Date().getMonth(); // 0-11
+
+  const seasonal = {
+    'Tutoring & Learning Centers': {
+      spring: 'Spring is a great time to start tutoring — many centers offer free assessments before summer. Ask about placement tests and trial sessions.',
+      summer: 'Summer programs fill up fast. Many tutoring centers offer intensive summer sessions to prevent learning loss. Book early for the best schedules.',
+      fall: 'Back-to-school is the busiest enrollment period. If your child is adjusting to a new grade level, now is the ideal time to start supplemental learning.',
+      winter: 'Winter break is a great catch-up window. Many centers run short-term holiday programs to reinforce key skills before the spring semester.'
+    },
+    'Kids Activities & Classes': {
+      spring: 'Spring session registration is typically open now. Many studios offer trial classes — a great low-commitment way to see if your child enjoys the activity.',
+      summer: 'Summer intensives and camps are available at many activity centers. Great for kids who want to try something new or level up their skills.',
+      fall: 'Fall semester classes are starting. Most studios offer flexible schedules for after-school activities. Ask about sibling discounts.',
+      winter: 'Winter showcases and recitals are coming up. It\'s also a good time to try new activities during school breaks.'
+    },
+    'Birthday Party Venues': {
+      spring: 'Spring and early summer are peak party season — book 4-6 weeks ahead to secure your preferred date and package.',
+      summer: 'Summer party slots fill quickly. Ask about weekday availability for better pricing and more options.',
+      fall: 'Fall is a great time for indoor birthday parties. Many venues offer special back-to-school party themes.',
+      winter: 'Holiday-themed party packages are often available. Indoor venues are especially popular during colder months.'
+    },
+    'Summer Camps & After School': {
+      spring: 'Summer camp registration is open. Early-bird pricing and popular sessions go fast — register now for the best selection.',
+      summer: 'Camps are in full swing. Some still have spots for later sessions. Ask about weekly drop-in options.',
+      fall: 'After-school programs are enrolling now. Look for programs that offer homework help, enrichment, and safe pickup from school.',
+      winter: 'Winter break camps are a lifesaver for working parents. Many programs offer week-long themed sessions during the holidays.'
+    },
+    'Pediatric Dentists & Doctors': {
+      spring: 'Spring is a good time to schedule annual check-ups and dental cleanings before the busy summer season.',
+      summer: 'Get sports physicals and wellness checks done before fall activities begin. Many offices have extended summer hours.',
+      fall: 'Flu season is approaching — schedule vaccinations early. Dental check-ups before the holidays help avoid emergency visits.',
+      winter: 'Start the year with a wellness visit. Many pediatric offices have shorter wait times in January and February.'
+    },
+    'Daycares & Preschools': {
+      spring: 'Fall enrollment for preschools typically opens in spring. Tour facilities now and ask about waitlists for popular programs.',
+      summer: 'Summer programs at many daycares include special activities and field trips. Ask about flexible summer-only schedules.',
+      fall: 'The school year has started — some centers still have openings. Ask about mid-year enrollment and transition support.',
+      winter: 'Visiting daycares during winter gives you a realistic view of daily routines. Ask about holiday schedules and closures.'
+    },
+    'Family-Friendly Restaurants': {
+      spring: 'Patio season is here. Many family restaurants have outdoor seating with space for kids to move around.',
+      summer: 'Look for restaurants with kids-eat-free nights and summer specials. Early dinner (5-6pm) usually means shorter waits.',
+      fall: 'Back-to-school dinner deals are common. Many family restaurants offer weeknight specials perfect for busy school nights.',
+      winter: 'Holiday dining reservations fill up fast. Many family restaurants offer special holiday menus and group packages.'
+    },
+    'Kids Haircuts & Clothing': {
+      spring: 'Spring wardrobe refresh time. Many kids\' clothing stores have seasonal sales and new arrivals for warmer weather.',
+      summer: 'Back-to-school shopping starts in July. Get ahead of the rush for uniforms, shoes, and school-year basics.',
+      fall: 'Fall styles are in. Many kids\' salons get busy before school photos — book haircuts a week ahead.',
+      winter: 'Holiday outfits and winter gear are in stock. Many stores offer gift cards and holiday shopping events.'
+    }
+  };
+
+  const catSeasons = seasonal[category];
+  if (!catSeasons) return '';
+
+  let season;
+  if (month >= 2 && month <= 4) season = 'spring';
+  else if (month >= 5 && month <= 7) season = 'summer';
+  else if (month >= 8 && month <= 10) season = 'fall';
+  else season = 'winter';
+
+  return catSeasons[season] || '';
+}
+
+// --- CATEGORY EXPLAINER ---
+function getCategoryExplainer(category) {
+  const explainers = {
+    'Tutoring & Learning Centers': {
+      title: 'What Are Tutoring & Learning Centers?',
+      text: 'Tutoring and learning centers provide supplemental education for children, typically covering math, reading, writing, and test preparation. Programs like Kumon, Mathnasium, and Sylvan use structured curricula that adapt to each child\'s level. Most centers offer a free initial assessment to determine where your child stands and create a personalized learning plan. Sessions usually run 1-2 times per week, and many centers serve students from pre-K through high school.',
+      questions: ['What is the student-to-tutor ratio?', 'Do you offer a free placement assessment?', 'How do you track and report progress?', 'What subjects and grade levels do you cover?', 'Is there a homework component between sessions?']
+    },
+    'Kids Activities & Classes': {
+      title: 'Finding the Right Activity for Your Child',
+      text: 'Kids activity centers offer structured classes in dance, swimming, martial arts, gymnastics, music, art, and more. Most programs are organized by age group and skill level, with sessions running in 8-12 week semesters. Many studios offer trial classes so your child can explore different activities before committing. Group classes help build social skills, discipline, and confidence alongside physical development.',
+      questions: ['Can we do a trial class before enrolling?', 'What age groups do you serve?', 'What should my child wear or bring?', 'How are classes grouped — by age or skill level?', 'Do you offer make-up classes for missed sessions?']
+    },
+    'Birthday Party Venues': {
+      title: 'Planning a Kids\' Birthday Party',
+      text: 'Birthday party venues handle the logistics so you can focus on the fun. Most offer all-inclusive packages that cover the activity, party room time, invitations, decorations, and food. Popular options include trampoline parks, indoor playgrounds, art studios, and arcade centers. Packages typically accommodate 8-20 kids and last 2-3 hours. Book at least 3-4 weeks in advance, especially for weekend slots.',
+      questions: ['What\'s included in the party package?', 'How many kids can you accommodate?', 'Can we bring our own food or cake?', 'How far in advance should we book?', 'Is there a private party room?']
+    },
+    'Summer Camps & After School': {
+      title: 'Choosing Summer Camps & After-School Programs',
+      text: 'Summer camps and after-school programs provide structured care and enrichment for school-age children. Programs range from academic enrichment and STEM to sports, arts, and outdoor adventure. Day camps typically run 8am-5pm with extended care options. After-school programs usually include pickup from local schools, homework time, snacks, and organized activities. Many programs offer weekly themes and field trips.',
+      questions: ['What is the daily schedule?', 'Do you provide transportation or school pickup?', 'What is your staff-to-child ratio?', 'Are meals and snacks included?', 'What happens on rainy days or bad weather?']
+    },
+    'Pediatric Dentists & Doctors': {
+      title: 'Choosing a Pediatric Provider',
+      text: 'Pediatric dentists and doctors specialize in children\'s health from infancy through adolescence. Their offices are designed to be kid-friendly, with staff trained to work with young patients. Pediatric dentists recommend first visits by age 1, while well-child checkups follow an age-based schedule. These specialists understand developmental milestones and can catch issues early. Most accept major insurance plans and offer flexible scheduling.',
+      questions: ['Do you accept our insurance plan?', 'What is your approach to anxious or first-time patients?', 'What are your emergency/after-hours procedures?', 'How do you handle sedation or anesthesia if needed?', 'Can parents stay in the room during the visit?']
+    },
+    'Daycares & Preschools': {
+      title: 'Finding the Right Daycare or Preschool',
+      text: 'Daycares and preschools provide early childhood education and care for children typically aged 6 weeks to 5 years. Programs range from play-based to academic (like Montessori), and many are licensed and accredited by state and national organizations. Look for low student-to-teacher ratios, clean and safe facilities, structured daily routines, and open communication with parents. Tours are the best way to get a feel for the environment.',
+      questions: ['What is your teacher-to-child ratio?', 'Are you licensed and accredited?', 'What does a typical daily schedule look like?', 'How do you handle discipline and conflict?', 'What is your sick child policy?']
+    },
+    'Family-Friendly Restaurants': {
+      title: 'Dining Out with Kids in Plano & Frisco',
+      text: 'Family-friendly restaurants welcome children with dedicated kids\' menus, high chairs, booster seats, and a relaxed atmosphere. The best family spots offer quick service (kids don\'t wait well), reasonable portions, and food options beyond chicken nuggets. Many local restaurants have outdoor patios, play areas, or coloring activities to keep kids entertained. Early dining (5-6pm) typically means shorter waits and a more relaxed experience.',
+      questions: ['Do you have a dedicated kids\' menu?', 'Are high chairs and booster seats available?', 'Do you accommodate food allergies?', 'Is there outdoor seating or a play area?', 'Do you offer kids-eat-free nights?']
+    },
+    'Kids Haircuts & Clothing': {
+      title: 'Kids\' Haircuts & Shopping Guide',
+      text: 'Kids\' hair salons specialize in making haircuts fun and stress-free, especially for first-timers. Many feature themed chairs (cars, airplanes), TV screens, and patient stylists experienced with wiggly little ones. Children\'s clothing stores in the area range from budget-friendly to boutique, carrying everything from everyday basics to special occasion outfits. Many stores offer loyalty programs and seasonal sales.',
+      questions: ['Do you have experience with first haircuts?', 'How do you handle children who are nervous?', 'Do you offer walk-ins or appointments only?', 'Do you carry specific sizes or age ranges?', 'Do you offer a loyalty or rewards program?']
+    }
+  };
+  return explainers[category] || null;
+}
+
 exports.handler = async (event) => {
   let id = event.queryStringParameters?.id;
   if (!id) {
@@ -50,13 +240,29 @@ exports.handler = async (event) => {
     }
 
     const f = biz;
+    const categoryBiz = businesses.filter(b => b.category === f.category);
 
-    const related = businesses
-      .filter(b => b.category === f.category && b.id !== id)
+    const related = categoryBiz
+      .filter(b => b.id !== id)
       .sort((a, b) => (b.rating || 0) - (a.rating || 0))
       .slice(0, 5);
 
-    // Rating
+    // --- CONFIDENCE BADGE ---
+    const badge = getConfidenceBadge(f, categoryBiz);
+    const badgeHtml = badge ? `
+      <div class="confidence-badge" style="border-left-color:${badge.color}">
+        <div class="badge-label" style="color:${badge.color}">${escHtml(badge.label)}</div>
+        <div class="badge-desc">${escHtml(badge.desc)}</div>
+      </div>` : '';
+
+    // --- HOURS NUDGE ---
+    const nudges = getHoursNudge(f.hours);
+    const nudgeHtml = nudges.length ? `
+      <div class="nudges">
+        ${nudges.map(n => `<div class="nudge"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3BA7A0" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${escHtml(n)}</div>`).join('')}
+      </div>` : '';
+
+    // --- RATING ---
     const ratingHtml = f.rating ? `
       <div class="rating-bar">
         <span class="rating-num">${f.rating}</span>
@@ -64,7 +270,7 @@ exports.handler = async (event) => {
         ${f.review_count ? `<span class="rating-count">(${f.review_count} reviews)</span>` : ''}
       </div>` : '';
 
-    // Services as badges
+    // --- SERVICES ---
     let servicesHtml = '';
     if (f.services) {
       const items = f.services.split(',').map(s => s.trim()).filter(Boolean);
@@ -77,7 +283,7 @@ exports.handler = async (event) => {
       }
     }
 
-    // Hours
+    // --- HOURS ---
     let hoursHtml = '';
     if (f.hours) {
       hoursHtml = `
@@ -95,7 +301,7 @@ exports.handler = async (event) => {
         </div>`;
     }
 
-    // Reviews
+    // --- REVIEWS ---
     let reviewsHtml = '';
     if (f.reviews) {
       const snippets = f.reviews.split('---').map(s => s.trim()).filter(Boolean);
@@ -112,7 +318,35 @@ exports.handler = async (event) => {
       }
     }
 
-    // Map embed
+    // --- CATEGORY EXPLAINER + QUESTIONS ---
+    const explainer = getCategoryExplainer(f.category);
+    let explainerHtml = '';
+    if (explainer) {
+      explainerHtml = `
+        <div class="section explainer">
+          <h2>${escHtml(explainer.title)}</h2>
+          <p class="explainer-text">${escHtml(explainer.text)}</p>
+        </div>
+        <div class="section">
+          <h2>Questions to Ask Before You Visit</h2>
+          <ul class="questions-list">
+            ${explainer.questions.map(q => `<li>${escHtml(q)}</li>`).join('')}
+          </ul>
+        </div>`;
+    }
+
+    // --- SEASONAL BLOCK ---
+    const seasonalText = getSeasonalBlock(f.category);
+    const seasonalHtml = seasonalText ? `
+      <div class="seasonal-block">
+        <div class="seasonal-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E8B872" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></div>
+        <div class="seasonal-content">
+          <div class="seasonal-label">Seasonal Tip</div>
+          <p>${escHtml(seasonalText)}</p>
+        </div>
+      </div>` : '';
+
+    // --- MAP ---
     const mapQuery = encodeURIComponent(f.address ? `${f.name}, ${f.address}` : `${f.name}, ${f.city || 'Plano'}, TX`);
     const mapHtml = `
       <div class="section">
@@ -126,7 +360,7 @@ exports.handler = async (event) => {
         </div>
       </div>`;
 
-    // Related
+    // --- RELATED ---
     const relatedHtml = related.length > 0 ? `
       <div class="section related">
         <h2>Similar in ${escHtml(f.category)}</h2>
@@ -140,7 +374,7 @@ exports.handler = async (event) => {
           </a>`).join('')}
       </div>` : '';
 
-    // JSON-LD
+    // --- JSON-LD ---
     const jsonLd = JSON.stringify({
       "@context": "https://schema.org",
       "@type": "LocalBusiness",
@@ -179,21 +413,26 @@ exports.handler = async (event) => {
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
     body { font-family:'Inter',sans-serif; color:#2E2E2E; background:#FAF9F7; line-height:1.6; }
 
-    .nav { background:#fff; border-bottom:1px solid #E4E4E7; padding:0 24px; }
+    .nav { background:#fff; border-bottom:1px solid #E4E4E7; padding:0 24px; position:sticky; top:0; z-index:100; }
     .nav-inner { max-width:1100px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; height:64px; }
     .logo { font-family:'Poppins',sans-serif; font-size:1.4rem; font-weight:600; color:#3BA7A0; text-decoration:none; letter-spacing:-0.5px; }
+    .nav-actions { display:flex; align-items:center; gap:16px; }
     .nav-link { font-size:0.85rem; color:#6A6A6A; text-decoration:none; }
     .nav-link:hover { color:#3BA7A0; }
+    .save-btn { display:inline-flex; align-items:center; gap:5px; padding:6px 14px; border-radius:6px; font-size:0.8rem; font-weight:500; cursor:pointer; border:1px solid #DDD; background:#fff; color:#555; transition:all 0.2s; }
+    .save-btn:hover { border-color:#F47C6A; color:#F47C6A; }
+    .save-btn.saved { background:#FFF5F4; border-color:#F47C6A; color:#F47C6A; }
+    .save-btn svg { width:14px; height:14px; }
 
     .hero-section { position:relative; background:#1a1a1a; }
     .hero-img { width:100%; max-height:400px; object-fit:cover; display:block; }
     .hero-placeholder { width:100%; height:260px; background:linear-gradient(135deg, #3BA7A0 0%, #2d8a84 60%, #1a6b66 100%); display:flex; align-items:center; justify-content:center; }
-    .hero-placeholder-text { font-family:'Poppins',sans-serif; font-size:2.5rem; font-weight:700; color:rgba(255,255,255,0.2); letter-spacing:6px; text-transform:uppercase; }
+    .hero-placeholder-text { font-family:'Poppins',sans-serif; font-size:2.5rem; font-weight:700; color:rgba(255,255,255,0.15); letter-spacing:6px; text-transform:uppercase; }
     .hero-overlay { position:absolute; bottom:0; left:0; right:0; height:120px; background:linear-gradient(transparent, rgba(0,0,0,0.4)); }
 
     .wrap { max-width:800px; margin:0 auto; padding:40px 24px 60px; }
 
-    .breadcrumb { display:flex; align-items:center; gap:6px; margin-bottom:24px; font-size:0.8rem; }
+    .breadcrumb { display:flex; align-items:center; gap:6px; margin-bottom:24px; font-size:0.8rem; flex-wrap:wrap; }
     .breadcrumb a { color:#6A6A6A; text-decoration:none; }
     .breadcrumb a:hover { color:#3BA7A0; }
     .breadcrumb span { color:#CCC; }
@@ -201,6 +440,13 @@ exports.handler = async (event) => {
     .cat-badge { display:inline-block; padding:4px 12px; background:rgba(59,167,160,0.1); color:#3BA7A0; font-size:0.7rem; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; border-radius:4px; margin-bottom:12px; }
     h1 { font-family:'Poppins',sans-serif; font-size:2rem; font-weight:700; color:#2E2E2E; margin-bottom:4px; line-height:1.3; }
     .subtitle { font-size:0.95rem; color:#6A6A6A; margin-bottom:16px; }
+
+    .confidence-badge { display:flex; flex-direction:column; gap:2px; padding:12px 16px; background:#fff; border-radius:8px; border:1px solid #E4E4E7; border-left:4px solid; margin-bottom:20px; }
+    .badge-label { font-family:'Poppins',sans-serif; font-size:0.85rem; font-weight:600; }
+    .badge-desc { font-size:0.8rem; color:#6A6A6A; }
+
+    .nudges { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px; }
+    .nudge { display:inline-flex; align-items:center; gap:6px; padding:6px 14px; background:#F0FAF9; border:1px solid #D0EDEB; border-radius:20px; font-size:0.8rem; color:#2d8a84; font-weight:500; }
 
     .rating-bar { display:flex; align-items:center; gap:8px; margin-bottom:24px; }
     .rating-num { font-size:1.6rem; font-weight:600; color:#2E2E2E; }
@@ -226,6 +472,12 @@ exports.handler = async (event) => {
     .about h2 { font-family:'Poppins',sans-serif; font-size:1.3rem; font-weight:600; color:#2E2E2E; margin-bottom:12px; }
     .about p { font-size:0.95rem; color:#555; line-height:1.8; }
 
+    .seasonal-block { display:flex; gap:14px; padding:18px 20px; background:#FFFBF0; border:1px solid #F5E6C4; border-radius:10px; margin-bottom:32px; }
+    .seasonal-icon { flex-shrink:0; margin-top:2px; }
+    .seasonal-content { flex:1; }
+    .seasonal-label { font-family:'Poppins',sans-serif; font-size:0.75rem; font-weight:600; color:#D4A853; letter-spacing:1px; text-transform:uppercase; margin-bottom:4px; }
+    .seasonal-content p { font-size:0.85rem; color:#7A6A3A; line-height:1.6; }
+
     .section { margin-bottom:40px; }
     .section h2 { font-family:'Poppins',sans-serif; font-size:1.3rem; font-weight:600; color:#2E2E2E; margin-bottom:16px; padding-bottom:8px; border-bottom:1px solid #E4E4E7; }
 
@@ -241,8 +493,14 @@ exports.handler = async (event) => {
 
     .reviews { display:flex; flex-direction:column; gap:16px; }
     .review { padding:20px 24px; background:#fff; border-radius:10px; border:1px solid #E4E4E7; border-left:3px solid #3BA7A0; position:relative; }
-    .review::before { content:'"'; position:absolute; top:8px; left:16px; font-size:2.5rem; color:rgba(59,167,160,0.15); font-family:Georgia,serif; line-height:1; }
+    .review::before { content:open-quote; position:absolute; top:8px; left:16px; font-size:2.5rem; color:rgba(59,167,160,0.15); font-family:Georgia,serif; line-height:1; }
     .review p { font-size:0.9rem; color:#555; line-height:1.7; font-style:italic; padding-left:20px; }
+
+    .explainer-text { font-size:0.92rem; color:#555; line-height:1.8; }
+    .questions-list { list-style:none; padding:0; }
+    .questions-list li { position:relative; padding:10px 0 10px 28px; border-bottom:1px solid #F5F5F5; font-size:0.88rem; color:#444; }
+    .questions-list li:last-child { border-bottom:none; }
+    .questions-list li::before { content:'?'; position:absolute; left:0; top:10px; width:20px; height:20px; background:#3BA7A0; color:#fff; border-radius:50%; font-size:0.7rem; font-weight:700; display:flex; align-items:center; justify-content:center; }
 
     .map-wrap { border-radius:10px; overflow:hidden; border:1px solid #E4E4E7; }
 
@@ -263,6 +521,8 @@ exports.handler = async (event) => {
       .quick-actions { flex-direction:column; }
       .quick-btn { justify-content:center; }
       .hero-img { max-height:260px; }
+      .hero-placeholder { height:180px; }
+      .hero-placeholder-text { font-size:1.5rem; }
     }
   </style>
 </head>
@@ -270,7 +530,13 @@ exports.handler = async (event) => {
   <nav class="nav">
     <div class="nav-inner">
       <a href="/" class="logo">KidCompass</a>
-      <a href="/" class="nav-link">Browse All</a>
+      <div class="nav-actions">
+        <a href="/" class="nav-link">Browse All</a>
+        <button class="save-btn" id="saveBtn" onclick="toggleSave()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+          <span id="saveTxt">Save</span>
+        </button>
+      </div>
     </div>
   </nav>
 
@@ -290,6 +556,8 @@ exports.handler = async (event) => {
     <h1>${escHtml(f.name)}</h1>
     <p class="subtitle">${escHtml(f.city || 'Plano')}, TX${f.address ? ' — ' + escHtml(f.address) : ''}</p>
 
+    ${badgeHtml}
+    ${nudgeHtml}
     ${ratingHtml}
 
     <div class="quick-actions">
@@ -307,15 +575,42 @@ exports.handler = async (event) => {
       <div class="info-card"><div class="info-card-label">Source</div><div class="info-card-value">${escHtml(f.source || 'Google Maps')}</div></div>
     </div>
 
+    ${seasonalHtml}
+
     ${f.description ? `<div class="about"><h2>About ${escHtml(f.name)}</h2><p>${f.description.replace(/\n/g, '<br>')}</p></div>` : ''}
 
     ${servicesHtml}
     ${hoursHtml}
     ${reviewsHtml}
     ${mapHtml}
+    ${explainerHtml}
     ${relatedHtml}
   </div>
+
   <div class="footer">KidCompass — Plano & Frisco, TX</div>
+
+  <script>
+    const BIZ_ID = '${id}';
+    function getSaved() { try { return JSON.parse(localStorage.getItem('kc_saved') || '[]'); } catch(e) { return []; } }
+    function isSaved() { return getSaved().includes(BIZ_ID); }
+    function toggleSave() {
+      let saved = getSaved();
+      if (saved.includes(BIZ_ID)) {
+        saved = saved.filter(x => x !== BIZ_ID);
+      } else {
+        saved.push(BIZ_ID);
+      }
+      localStorage.setItem('kc_saved', JSON.stringify(saved));
+      updateSaveBtn();
+    }
+    function updateSaveBtn() {
+      const btn = document.getElementById('saveBtn');
+      const txt = document.getElementById('saveTxt');
+      if (isSaved()) { btn.classList.add('saved'); txt.textContent = 'Saved'; }
+      else { btn.classList.remove('saved'); txt.textContent = 'Save'; }
+    }
+    updateSaveBtn();
+  </script>
 </body>
 </html>`;
 
@@ -328,17 +623,3 @@ exports.handler = async (event) => {
     return { statusCode: 500, body: 'Server error: ' + err.message };
   }
 };
-
-function getCatSlug(category) {
-  const map = {
-    'Tutoring & Learning Centers': 'tutoring-learning-centers',
-    'Kids Activities & Classes': 'kids-activities-classes',
-    'Birthday Party Venues': 'birthday-party-venues',
-    'Summer Camps & After School': 'summer-camps-after-school',
-    'Pediatric Dentists & Doctors': 'pediatric-dentists-doctors',
-    'Daycares & Preschools': 'daycares-preschools',
-    'Family-Friendly Restaurants': 'family-friendly-restaurants',
-    'Kids Haircuts & Clothing': 'kids-haircuts-clothing'
-  };
-  return map[category] || '';
-}
