@@ -771,7 +771,6 @@ img { max-width: 100%; display: block; }
 
 .news-cat-dot[data-cat="Education"] { background: var(--sky); }
 .news-cat-dot[data-cat="Health & Safety"] { background: var(--coral); }
-.news-cat-dot[data-cat="Traffic & Construction"] { background: var(--golden); }
 .news-cat-dot[data-cat="Events"] { background: var(--purple); }
 .news-cat-dot[data-cat="New Openings"] { background: var(--teal); }
 .news-cat-dot[data-cat="Sports & Activities"] { background: var(--coral); }

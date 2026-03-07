@@ -12,15 +12,24 @@ const PARENT_KEYWORDS = [
   'camp', 'registration', 'enrollment', 'playground', 'park', 'library',
   'pediatric', 'vaccine', 'health', 'safety', 'recall', 'opening',
   'restaurant', 'event', 'festival', 'summer', 'spring break',
-  'traffic', 'construction', 'road', 'closure', 'detour',
   'sports', 'league', 'swim', 'soccer', 'baseball', 'dance',
   'preschool', 'daycare', 'education', 'teacher', 'elementary',
   'middle school', 'high school', 'isd', 'pisd', 'fisd',
-  'water', 'boil', 'alert', 'warning', 'weather'
+  'water', 'boil', 'alert', 'recall'
+];
+
+// Skip articles about traffic/road construction and weather — stale too fast
+const SKIP_KEYWORDS = [
+  'traffic', 'lane closure', 'road closure', 'construction update',
+  'roadwork', 'detour', 'road block', 'intermittent',
+  'weather', 'tornado', 'thunderstorm', 'freeze warning',
+  'wind advisory', 'heat advisory'
 ];
 
 function isRelevant(title, snippet) {
   const text = (title + ' ' + (snippet || '')).toLowerCase();
+  // Skip traffic/weather — stale too fast for a daily scrape
+  if (SKIP_KEYWORDS.some(kw => text.includes(kw))) return false;
   return PARENT_KEYWORDS.some(kw => text.includes(kw));
 }
 
@@ -30,7 +39,6 @@ function categorize(title, snippet) {
   if (/sport|league|registration|tryout|soccer|baseball|swim|ymca|athletic/.test(text)) return 'Sports & Activities';
   if (/open|coming soon|new .*(restaurant|store|shop|venue)|grand opening/.test(text)) return 'New Openings';
   if (/health|vaccine|measles|recall|safety|pediatric|flu|covid|water quality|boil/.test(text)) return 'Health & Safety';
-  if (/traffic|construction|road|closure|lane|detour|highway|380|dnt|preston/.test(text)) return 'Traffic & Construction';
   if (/event|festival|concert|fair|celebration|parade|firework|holiday/.test(text)) return 'Events';
   return 'Community';
 }
