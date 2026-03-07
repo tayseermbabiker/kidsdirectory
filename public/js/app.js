@@ -184,8 +184,8 @@ function renderHome(app) {
 
     <div class="section">
       <div class="subscribe-section">
-        <h2>Join Plano & Frisco Parents</h2>
-        <p>Get our weekly picks — hidden gems, new openings, and things to do with kids this weekend.</p>
+        <h2>Join Local Parents Who Get the Weekly Scoop</h2>
+        <p>School updates, registration deadlines, new openings, and things to do with kids this weekend.</p>
         <form class="subscribe-form" id="subscribe-form">
           <input type="email" name="email" placeholder="Your email address" required>
           <button type="submit">Count Me In</button>
