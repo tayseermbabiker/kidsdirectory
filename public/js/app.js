@@ -44,18 +44,19 @@ const CAT_HERO_IMGS = {
 
 async function loadData() {
   try {
-    const [bizRes, newsRes] = await Promise.all([
-      fetch('/businesses.json'),
-      fetch('/news.json')
-    ]);
-    const bizData = await bizRes.json();
-    allBusinesses = bizData.businesses || [];
-    try {
-      const newsData = await newsRes.json();
-      allNews = (newsData.news || []).filter(n => n.title.length > 15 && n.url);
-    } catch(e) { allNews = []; }
+    const res = await fetch('/businesses.json');
+    const data = await res.json();
+    allBusinesses = data.businesses || [];
   } catch (e) {
     allBusinesses = [];
+  }
+  try {
+    const res = await fetch('/news.json');
+    if (res.ok) {
+      const data = await res.json();
+      allNews = (data.news || []).filter(n => n.title && n.title.length > 15 && n.url);
+    }
+  } catch (e) {
     allNews = [];
   }
   route();
@@ -149,13 +150,9 @@ function renderHome(app) {
       <div class="section-header">
         <h2>Local Parent News</h2>
       </div>
-      <div class="news-carousel" id="news-carousel">
-        <button class="news-carousel-btn news-carousel-btn--left" id="news-prev" aria-label="Previous">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-        </button>
-        <div class="news-carousel-track" id="news-track">
-          ${allNews.slice(0, 12).map(n => {
-            const catIcon = getNewsCatIcon(n.category);
+      <div class="news-slider-wrapper">
+        <div class="news-slider-track" id="news-track">
+          ${[...allNews.slice(0, 12), ...allNews.slice(0, 12)].map(n => {
             const date = n.published_at ? formatNewsDate(n.published_at) : '';
             return `
           <a href="${escHtml(n.url)}" target="_blank" rel="noopener" class="news-card">
@@ -169,9 +166,6 @@ function renderHome(app) {
           </a>`;
           }).join('')}
         </div>
-        <button class="news-carousel-btn news-carousel-btn--right" id="news-next" aria-label="Next">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-        </button>
       </div>
     </div>` : ''}
 
@@ -459,19 +453,28 @@ function formatNewsDate(dateStr) {
 
 function initNewsCarousel() {
   const track = document.getElementById('news-track');
-  const prev = document.getElementById('news-prev');
-  const next = document.getElementById('news-next');
-  if (!track || !prev || !next) return;
+  if (!track) return;
 
-  const step = 632; // 2 cards (300px each) + 2 gaps (16px)
-
-  next.addEventListener('click', () => {
-    track.scrollBy({ left: step, behavior: 'smooth' });
+  track.addEventListener('mouseenter', () => {
+    track.style.animationPlayState = 'paused';
+  });
+  track.addEventListener('mouseleave', () => {
+    track.style.animationPlayState = 'running';
   });
 
-  prev.addEventListener('click', () => {
-    track.scrollBy({ left: -step, behavior: 'smooth' });
+  // Touch support
+  track.addEventListener('touchstart', () => {
+    track.style.animationPlayState = 'paused';
   });
+  track.addEventListener('touchend', () => {
+    track.style.animationPlayState = 'running';
+  });
+
+  // Respect reduced motion preference
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    track.style.animation = 'none';
+    track.style.overflowX = 'auto';
+  }
 }
 
 // SPA navigation
