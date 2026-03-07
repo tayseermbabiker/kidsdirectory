@@ -12,7 +12,7 @@ async function fetchAllBusinesses() {
   do {
     const params = new URLSearchParams();
     params.set('pageSize', '100');
-    ['name', 'category', 'city', 'website', 'take', 'services', 'rating', 'review_count'].forEach(f => params.append('fields[]', f));
+    ['name', 'category', 'city', 'website', 'business_type', 'services', 'description', 'price_note'].forEach(f => params.append('fields[]', f));
     if (offset) params.set('offset', offset);
     const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(TABLE)}?${params}`, {
       headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` }
@@ -40,138 +40,139 @@ async function updateRecord(id, fields) {
   }
 }
 
-async function scrapeWebsite(page, url, category) {
+// --- EXTRACTION HELPERS (work on raw HTML string) ---
+
+function extractFromHtml(html) {
+  // Meta description
+  let about = '';
+  const metaMatch = html.match(/<meta[^>]*(?:name="description"|property="og:description")[^>]*content="([^"]{30,400})"/i)
+    || html.match(/<meta[^>]*content="([^"]{30,400})"[^>]*(?:name="description"|property="og:description")/i);
+  if (metaMatch) about = metaMatch[1].replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+
+  // Strip HTML tags for text analysis
+  const text = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ');
+
+  // Age range
+  let ageRange = '';
+  const agePatterns = [
+    /ages?\s*(\d{1,2})\s*[-–to]+\s*(\d{1,2})/i,
+    /(\d{1,2})\s*months?\s*[-–to]+\s*(\d{1,2})\s*years?/i,
+    /children\s*ages?\s*(\d{1,2})\s*[-–to]+\s*(\d{1,2})/i,
+    /serving\s*(?:children|kids|students)\s*ages?\s*(\d{1,2})\s*[-–to]+\s*(\d{1,2})/i,
+    /pre-?k\s*(?:through|to|-)\s*(\d+)(?:th|st|nd|rd)?\s*grade/i,
+    /infants?\s*(?:through|to|-)\s*pre-?k/i,
+    /toddlers?\s*(?:through|to|-)\s*(\w+)/i
+  ];
+  for (const p of agePatterns) {
+    const m = text.match(p);
+    if (m) { ageRange = m[0].substring(0, 50); break; }
+  }
+
+  // Pricing
+  let pricing = '';
+  const pricePatterns = [
+    /\$\s*(\d{2,4})\s*(?:\/|per)\s*(?:month|mo|session|class|week)/i,
+    /(?:tuition|fee|cost|price|rate)s?\s*(?:start|begin|from|:)?\s*(?:at\s*)?\$\s*(\d{2,4})/i,
+    /\$\s*(\d{2,4})\s*[-–]\s*\$?\s*(\d{2,4})\s*(?:\/|per)?\s*(?:month|mo)?/i,
+    /(?:starting|from)\s*(?:at\s*)?\$\s*(\d{2,4})/i,
+    /free\s*(?:trial|assessment|evaluation|consultation|class)/i
+  ];
+  for (const p of pricePatterns) {
+    const m = text.match(p);
+    if (m) { pricing = m[0].substring(0, 80); break; }
+  }
+
+  // Free trial
+  let freeTrial = '';
+  const lower = text.toLowerCase();
+  if (lower.includes('free trial') || lower.includes('free class') || lower.includes('free assessment') ||
+      lower.includes('free evaluation') || lower.includes('free consultation') || lower.includes('try a class')) {
+    const trialPatterns = [
+      /free\s*(?:trial|introductory|first)\s*(?:class|lesson|session)/i,
+      /free\s*(?:assessment|evaluation|consultation)/i,
+      /try\s*a\s*(?:free\s*)?class/i,
+      /book\s*(?:a\s*)?free/i
+    ];
+    for (const p of trialPatterns) {
+      const m = text.match(p);
+      if (m) { freeTrial = m[0].substring(0, 60); break; }
+    }
+  }
+
+  return { about, ageRange, pricing, freeTrial };
+}
+
+// --- PHASE 1: Lightweight HTTP fetch ---
+async function fetchHtml(url) {
   try {
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
-    await sleep(3000);
-
-    const data = await page.evaluate((cat) => {
-      const body = document.body ? document.body.innerText : '';
-      const lower = body.toLowerCase();
-
-      // --- AGE RANGE ---
-      let ageRange = '';
-      const agePatterns = [
-        /ages?\s*(\d{1,2})\s*[-–to]+\s*(\d{1,2})/i,
-        /(\d{1,2})\s*months?\s*[-–to]+\s*(\d{1,2})\s*years?/i,
-        /children\s*ages?\s*(\d{1,2})\s*[-–to]+\s*(\d{1,2})/i,
-        /serving\s*(?:children|kids|students)\s*ages?\s*(\d{1,2})\s*[-–to]+\s*(\d{1,2})/i,
-        /grades?\s*(\w+)\s*[-–to]+\s*(\w+)/i,
-        /pre-?k\s*(?:through|to|-)\s*(\d+)(?:th|st|nd|rd)?\s*grade/i,
-        /infants?\s*(?:through|to|-)\s*pre-?k/i,
-        /toddlers?\s*(?:through|to|-)\s*(\w+)/i
-      ];
-      for (const p of agePatterns) {
-        const m = body.match(p);
-        if (m) { ageRange = m[0]; break; }
-      }
-
-      // --- PRICING ---
-      let pricing = '';
-      const pricePatterns = [
-        /\$\s*(\d{2,4})\s*(?:\/|per)\s*(?:month|mo|session|class|week)/i,
-        /(?:tuition|fee|cost|price|rate)s?\s*(?:start|begin|from|:)?\s*(?:at\s*)?\$\s*(\d{2,4})/i,
-        /\$\s*(\d{2,4})\s*[-–]\s*\$?\s*(\d{2,4})\s*(?:\/|per)?\s*(?:month|mo)?/i,
-        /(?:starting|from)\s*(?:at\s*)?\$\s*(\d{2,4})/i,
-        /free\s*(?:trial|assessment|evaluation|consultation|class)/i
-      ];
-      for (const p of pricePatterns) {
-        const m = body.match(p);
-        if (m) { pricing = m[0]; break; }
-      }
-
-      // --- PROGRAMS / SERVICES ---
-      const programs = [];
-      const meta = document.querySelectorAll('meta[name="description"], meta[property="og:description"]');
-      let metaDesc = '';
-      meta.forEach(m => { if (m.content) metaDesc += ' ' + m.content; });
-
-      // Look for lists of programs/services
-      const listItems = [];
-      document.querySelectorAll('li, h2, h3, .service, .program, [class*="service"], [class*="program"]').forEach(el => {
-        const t = el.innerText.trim();
-        if (t.length > 3 && t.length < 60 && !t.includes('\n')) {
-          listItems.push(t);
-        }
-      });
-
-      // --- DESCRIPTION / ABOUT ---
-      let about = '';
-      // Try meta description first
-      if (metaDesc.trim().length > 30) {
-        about = metaDesc.trim();
-      }
-      // Try looking for an about section
-      if (!about) {
-        const aboutEls = document.querySelectorAll('[class*="about"] p, [id*="about"] p, .description p, .intro p');
-        aboutEls.forEach(el => {
-          const t = el.innerText.trim();
-          if (t.length > 50 && t.length < 500 && !about) about = t;
-        });
-      }
-      // Try first significant paragraph
-      if (!about) {
-        document.querySelectorAll('p').forEach(el => {
-          const t = el.innerText.trim();
-          if (t.length > 80 && t.length < 500 && !about && !t.match(/cookie|privacy|©|copyright/i)) {
-            about = t;
-          }
-        });
-      }
-
-      // --- FREE TRIAL ---
-      let freeTrial = '';
-      if (lower.includes('free trial') || lower.includes('free class') || lower.includes('free assessment') ||
-          lower.includes('free evaluation') || lower.includes('free consultation') || lower.includes('try a class')) {
-        const trialPatterns = [
-          /free\s*(?:trial|introductory|first)\s*(?:class|lesson|session)/i,
-          /free\s*(?:assessment|evaluation|consultation)/i,
-          /try\s*a\s*(?:free\s*)?class/i,
-          /book\s*(?:a\s*)?free/i
-        ];
-        for (const p of trialPatterns) {
-          const m = body.match(p);
-          if (m) { freeTrial = m[0]; break; }
-        }
-      }
-
-      return {
-        ageRange: ageRange.substring(0, 50),
-        pricing: pricing.substring(0, 80),
-        about: about.substring(0, 400),
-        freeTrial: freeTrial.substring(0, 60),
-        programCount: listItems.length,
-        topPrograms: listItems.slice(0, 15).join(' | ')
-      };
-    }, category);
-
-    return data;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml',
+        'Accept-Language': 'en-US,en;q=0.9'
+      },
+      signal: controller.signal,
+      redirect: 'follow'
+    });
+    clearTimeout(timeout);
+    if (!res.ok) return null;
+    const html = await res.text();
+    if (html.length < 500) return null; // too small, probably a redirect page
+    return html;
   } catch (err) {
     return null;
   }
 }
 
-function buildFields(scraped, biz) {
+// --- PHASE 2: Browser scrape for JS-heavy sites ---
+async function scrapeWithBrowser(page, url) {
+  try {
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 40000 });
+    await sleep(4000);
+
+    const html = await page.content();
+    return html;
+  } catch (err) {
+    return null;
+  }
+}
+
+function buildFields(extracted, biz) {
   const fields = {};
   let servicesArr = biz.services ? biz.services.split(',').map(s => s.trim()) : [];
 
-  // Add age range to services if found and not already there
-  if (scraped.ageRange && !servicesArr.some(s => /ages?\s*\d/i.test(s))) {
-    servicesArr.unshift(scraped.ageRange);
+  // Add age range to services
+  if (extracted.ageRange && !servicesArr.some(s => /ages?\s*\d/i.test(s))) {
+    servicesArr.unshift(extracted.ageRange);
   }
 
-  // Add free trial to services if found
-  if (scraped.freeTrial && !servicesArr.some(s => /free/i.test(s))) {
-    servicesArr.push(scraped.freeTrial);
+  // Add free trial to services
+  if (extracted.freeTrial && !servicesArr.some(s => /free/i.test(s))) {
+    servicesArr.push(extracted.freeTrial);
   }
 
   if (servicesArr.length > 0 && servicesArr.join(', ') !== (biz.services || '')) {
     fields.services = servicesArr.join(', ');
   }
 
-  // Price note
-  if (scraped.pricing && scraped.pricing.length > 3) {
-    fields.price_note = scraped.pricing;
+  // Price note (only if not already set)
+  if (extracted.pricing && extracted.pricing.length > 3 && !biz.price_note) {
+    fields.price_note = extracted.pricing;
+  }
+
+  // Description / about (only if not already set)
+  if (extracted.about && extracted.about.length > 30 && !biz.description) {
+    // Clean up the about text
+    let desc = extracted.about.trim();
+    // Don't save if it's just a cookie/privacy notice
+    if (!/cookie|privacy|©|copyright|accept all/i.test(desc)) {
+      fields.description = desc;
+    }
   }
 
   return fields;
@@ -181,67 +182,101 @@ async function main() {
   console.log('Fetching businesses...');
   const businesses = await fetchAllBusinesses();
 
-  // Only process businesses that: have a website, don't have a take yet
-  const targets = businesses.filter(b => b.website && !b.take);
-  console.log(`Total: ${businesses.length}, Targets (have website, no take): ${targets.length}`);
+  // Only process local businesses with websites
+  const targets = businesses.filter(b =>
+    b.website &&
+    b.business_type === 'local' &&
+    !b.description // only if they don't have a description yet
+  );
+  console.log(`Total: ${businesses.length}, Local targets (have website, no description): ${targets.length}`);
 
   if (!targets.length) {
     console.log('Nothing to process.');
     return;
   }
 
-  const { browser, context } = await launchBrowser();
-  const page = await context.newPage();
-
   let enriched = 0;
+  let browserNeeded = [];
   let errors = 0;
   let skipped = 0;
 
+  // PHASE 1: Try lightweight HTTP fetch first
+  console.log('\n=== PHASE 1: HTTP Fetch ===');
   for (let i = 0; i < targets.length; i++) {
     const biz = targets[i];
     const url = biz.website.startsWith('http') ? biz.website : `https://${biz.website}`;
 
     process.stdout.write(`[${i + 1}/${targets.length}] ${biz.name}... `);
 
-    try {
-      const scraped = await scrapeWebsite(page, url, biz.category);
+    const html = await fetchHtml(url);
+    if (!html) {
+      console.log('HTTP failed — queued for browser');
+      browserNeeded.push(biz);
+      continue;
+    }
 
-      if (!scraped) {
-        console.log('FAILED (timeout/error)');
+    const extracted = extractFromHtml(html);
+    const foundAnything = extracted.ageRange || extracted.pricing || extracted.freeTrial || extracted.about;
+
+    if (!foundAnything) {
+      // Might be a JS-rendered site — queue for browser
+      console.log('No data from HTML — queued for browser');
+      browserNeeded.push(biz);
+      continue;
+    }
+
+    const fields = buildFields(extracted, biz);
+    if (Object.keys(fields).length > 0) {
+      await updateRecord(biz.id, fields);
+      enriched++;
+      console.log(`OK — desc:${extracted.about ? 'Y' : 'N'} age:${extracted.ageRange ? 'Y' : 'N'} price:${extracted.pricing ? 'Y' : 'N'} trial:${extracted.freeTrial ? 'Y' : 'N'}`);
+    } else {
+      skipped++;
+      console.log('SKIP (data already exists)');
+    }
+
+    // Brief pause to avoid rate limiting
+    await sleep(500);
+  }
+
+  console.log(`\nPhase 1: Enriched ${enriched}, Skipped ${skipped}, Browser needed: ${browserNeeded.length}`);
+
+  // PHASE 2: Browser scrape for remaining
+  if (browserNeeded.length > 0) {
+    console.log('\n=== PHASE 2: Browser Scrape ===');
+    const { browser, context } = await launchBrowser();
+    const page = await context.newPage();
+
+    for (let i = 0; i < browserNeeded.length; i++) {
+      const biz = browserNeeded[i];
+      const url = biz.website.startsWith('http') ? biz.website : `https://${biz.website}`;
+
+      process.stdout.write(`[${i + 1}/${browserNeeded.length}] ${biz.name}... `);
+
+      const html = await scrapeWithBrowser(page, url);
+      if (!html) {
+        console.log('FAILED (timeout)');
         errors++;
         continue;
       }
 
-      const fields = buildFields(scraped, biz);
-
-      const foundAnything = scraped.ageRange || scraped.pricing || scraped.freeTrial || scraped.about;
+      const extracted = extractFromHtml(html);
+      const fields = buildFields(extracted, biz);
 
       if (Object.keys(fields).length > 0) {
         await updateRecord(biz.id, fields);
         enriched++;
-        console.log(`OK — age:${scraped.ageRange ? 'Y' : 'N'} price:${scraped.pricing ? 'Y' : 'N'} trial:${scraped.freeTrial ? 'Y' : 'N'}`);
+        console.log(`OK — desc:${extracted.about ? 'Y' : 'N'} age:${extracted.ageRange ? 'Y' : 'N'} price:${extracted.pricing ? 'Y' : 'N'} trial:${extracted.freeTrial ? 'Y' : 'N'}`);
       } else {
         skipped++;
-        console.log(`SKIP (no extractable data)`);
+        console.log('SKIP (no extractable data)');
       }
 
-      // Log interesting finds for manual review
-      if (scraped.about && scraped.about.length > 50) {
-        console.log(`  ABOUT: ${scraped.about.substring(0, 120)}...`);
-      }
-      if (scraped.ageRange) console.log(`  AGE: ${scraped.ageRange}`);
-      if (scraped.pricing) console.log(`  PRICE: ${scraped.pricing}`);
-      if (scraped.freeTrial) console.log(`  TRIAL: ${scraped.freeTrial}`);
-
-    } catch (err) {
-      console.log(`ERROR: ${err.message}`);
-      errors++;
+      await sleep(2000);
     }
 
-    await sleep(2000);
+    await browser.close();
   }
-
-  await browser.close();
 
   console.log(`\n=== DONE ===`);
   console.log(`Enriched: ${enriched}`);
