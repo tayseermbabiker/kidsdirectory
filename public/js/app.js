@@ -66,7 +66,7 @@ function route() {
     return;
   }
 
-  const catMatch = path.match(/^\/(plano|frisco)\/([a-z0-9-]+)\/?$/);
+  const catMatch = path.match(/^\/(plano|frisco|all)\/([a-z0-9-]+)\/?$/);
   if (catMatch) {
     currentCity = catMatch[1];
     currentCategory = catMatch[2];
@@ -124,7 +124,7 @@ function renderHome(app) {
           const color = CAT_COLORS[i % CAT_COLORS.length];
           const icon = CAT_SVGS[c.name] || '';
           return `
-          <a href="/plano/${c.slug}" class="cat-card" data-color="${color}">
+          <a href="/all/${c.slug}" class="cat-card" data-color="${color}">
             <div class="cat-card-icon">${icon}</div>
             <div class="cat-card-text">
               <h3>${c.name}</h3>
@@ -220,12 +220,15 @@ function renderCityPage(app, citySlug) {
 }
 
 function renderCategoryPage(app, citySlug, catSlug) {
-  const city = cityFromSlug(citySlug);
   const cat = categoryFromSlug(catSlug);
-  const cityName = city ? city.name : citySlug;
   const catName = cat ? cat.name : catSlug;
+  const isAllCities = citySlug === 'all';
+  const city = isAllCities ? null : cityFromSlug(citySlug);
+  const cityName = isAllCities ? 'Plano & Frisco' : (city ? city.name : citySlug);
+  const breadcrumbCity = isAllCities ? 'All Cities' : cityName;
 
-  let businesses = allBusinesses.filter(b => b.category === catName);
+  const allInCategory = allBusinesses.filter(b => b.category === catName);
+  const initialCity = isAllCities ? 'all' : citySlug;
 
   const heroImg = CAT_HERO_IMGS[catName] || '';
 
@@ -234,22 +237,22 @@ function renderCategoryPage(app, citySlug, catSlug) {
     <div class="cat-hero">
       <div class="cat-hero-bg" style="background-image:url('${heroImg}')"></div>
       <div class="cat-hero-content">
-        <div class="breadcrumb breadcrumb--light"><a href="/">Home</a><span>/</span><a href="/${citySlug}">${cityName}</a><span>/</span>${catName}</div>
+        <div class="breadcrumb breadcrumb--light"><a href="/">Home</a><span>/</span>${breadcrumbCity}<span>/</span>${catName}</div>
         <h1>${catName}</h1>
-        <p>${businesses.length} listings in Plano & Frisco</p>
+        <p id="results-count">${allInCategory.length} listings in ${cityName}</p>
       </div>
     </div>` : `
     <div class="page-header">
       <div class="page-header-inner">
-        <div class="breadcrumb"><a href="/">Home</a> / <a href="/${citySlug}">${cityName}</a> / ${catName}</div>
+        <div class="breadcrumb"><a href="/">Home</a> / ${breadcrumbCity} / ${catName}</div>
         <h1>${catName}</h1>
-        <p>${businesses.length} listings in Plano & Frisco</p>
+        <p id="results-count">${allInCategory.length} listings in ${cityName}</p>
       </div>
     </div>`}
     <div class="section">
       <div class="filters-bar">
         <select class="filter-select" id="filter-city">
-          <option value="all">All Cities</option>
+          <option value="all"${isAllCities ? ' selected' : ''}>All Cities</option>
           ${CITIES.map(c => `<option value="${c.slug}"${c.slug === citySlug ? ' selected' : ''}>${c.name}</option>`).join('')}
         </select>
         <select class="filter-select" id="filter-sort">
@@ -258,10 +261,7 @@ function renderCategoryPage(app, citySlug, catSlug) {
           <option value="name">Name A-Z</option>
         </select>
       </div>
-      <div class="biz-grid" id="results-grid">
-        ${businesses.length ? businesses.map(renderBizCard).join('') :
-          '<div class="empty-state"><h3>No listings yet</h3><p>Check back soon!</p></div>'}
-      </div>
+      <div class="biz-grid" id="results-grid"></div>
     </div>
   `;
 
@@ -269,15 +269,19 @@ function renderCategoryPage(app, citySlug, catSlug) {
   const filterSort = document.getElementById('filter-sort');
 
   function applyFilters() {
-    let filtered = businesses;
+    let filtered = allInCategory;
     const cityVal = filterCity.value;
     if (cityVal !== 'all') {
       filtered = filtered.filter(b => b.city.toLowerCase() === cityVal);
     }
     const sortVal = filterSort.value;
+    filtered = [...filtered];
     if (sortVal === 'rating') filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
     if (sortVal === 'reviews') filtered.sort((a, b) => (b.review_count || 0) - (a.review_count || 0));
     if (sortVal === 'name') filtered.sort((a, b) => a.name.localeCompare(b.name));
+
+    const countEl = document.getElementById('results-count');
+    if (countEl) countEl.textContent = `${filtered.length} listings in ${cityVal === 'all' ? 'Plano & Frisco' : (cityFromSlug(cityVal) || {}).name || cityVal}`;
 
     document.getElementById('results-grid').innerHTML = filtered.length ?
       filtered.map(renderBizCard).join('') :
@@ -286,6 +290,7 @@ function renderCategoryPage(app, citySlug, catSlug) {
 
   filterCity.addEventListener('change', applyFilters);
   filterSort.addEventListener('change', applyFilters);
+  applyFilters();
 }
 
 function renderSavedPage(app) {

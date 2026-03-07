@@ -14,6 +14,11 @@
 
 # SPA fallback for category pages
 [[redirects]]
+  from = "/all/*"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
   from = "/plano/*"
   to = "/index.html"
   status = 200
