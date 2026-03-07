@@ -152,7 +152,7 @@ function renderHome(app) {
       </div>
       <div class="news-slider-wrapper">
         <div class="news-slider-track" id="news-track">
-          ${[...allNews.slice(0, 12), ...allNews.slice(0, 12)].map(n => {
+          ${[...prioritizeNews(allNews, 10), ...prioritizeNews(allNews, 10)].map(n => {
             const date = n.published_at ? formatNewsDate(n.published_at) : '';
             return `
           <a href="${escHtml(n.url)}" target="_blank" rel="noopener" class="news-card">
@@ -437,6 +437,32 @@ async function handleSubscribe(e) {
 function getNewsCatIcon(cat) {
   const map = { 'Education': 'book', 'Sports & Activities': 'ball', 'New Openings': 'store', 'Health & Safety': 'heart', 'Traffic & Construction': 'road', 'Events': 'calendar', 'Community': 'people' };
   return map[cat] || 'news';
+}
+
+// Priority-weight news: Education & Sports first, then Openings, Health, Events, Local Impact
+function prioritizeNews(news, max) {
+  const CAT_WEIGHT = {
+    'Education': 6,
+    'Sports & Activities': 5,
+    'New Openings': 4,
+    'Health & Safety': 3,
+    'Events': 2,
+    'Local Impact': 1,
+    'Community': 1
+  };
+  const now = new Date();
+  const scored = news.map(n => {
+    const catScore = CAT_WEIGHT[n.category] || 1;
+    // Recency: 0-2 days = 3, 3-4 days = 2, 5-7 days = 1, older = 0
+    let recency = 0;
+    if (n.published_at) {
+      const days = Math.floor((now - new Date(n.published_at + 'T00:00:00')) / 86400000);
+      recency = days <= 2 ? 3 : days <= 4 ? 2 : days <= 7 ? 1 : 0;
+    }
+    return { ...n, score: catScore * 2 + recency };
+  });
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, max);
 }
 
 function formatNewsDate(dateStr) {

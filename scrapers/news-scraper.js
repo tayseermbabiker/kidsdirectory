@@ -35,12 +35,12 @@ function isRelevant(title, snippet) {
 
 function categorize(title, snippet) {
   const text = (title + ' ' + (snippet || '')).toLowerCase();
-  if (/school|isd|pisd|fisd|education|teacher|student|enrollment|calendar|board/.test(text)) return 'Education';
-  if (/sport|league|registration|tryout|soccer|baseball|swim|ymca|athletic/.test(text)) return 'Sports & Activities';
-  if (/open|coming soon|new .*(restaurant|store|shop|venue)|grand opening/.test(text)) return 'New Openings';
+  if (/school|isd|pisd|fisd|education|teacher|student|enrollment|calendar|board|rezoning/.test(text)) return 'Education';
+  if (/sport|league|registration|tryout|soccer|baseball|swim|ymca|athletic|season|signup/.test(text)) return 'Sports & Activities';
+  if (/open|coming soon|new .*(restaurant|store|shop|venue)|grand opening|grandscape|legacy west/.test(text)) return 'New Openings';
   if (/health|vaccine|measles|recall|safety|pediatric|flu|covid|water quality|boil/.test(text)) return 'Health & Safety';
-  if (/event|festival|concert|fair|celebration|parade|firework|holiday/.test(text)) return 'Events';
-  return 'Community';
+  if (/event|festival|concert|fair|celebration|parade|firework|holiday|spring break|weekend/.test(text)) return 'Events';
+  return 'Local Impact';
 }
 
 // --- SCRAPER: Frisco City Alerts (HTTP — server rendered) ---
@@ -158,8 +158,10 @@ async function scrapeGoogleNewsRSS() {
         const t = (title + ' ' + source).toLowerCase();
         if (!/(plano|frisco|collin county|dfw|north texas|pisd|fisd)/.test(t)) continue;
 
-        // Skip obituaries, crime, politics — not useful for parents
+        // Skip obituaries, crime, generic national news — not useful for parents
         if (/obituary|murdered|homicide|indicted|sentenced|mugshot/i.test(title)) continue;
+        // Skip generic Texas/national stories not specific to Plano/Frisco
+        if (!/plano|frisco|pisd|fisd|collin county/i.test(title) && /statewide|texas legislature|governor|abbott/i.test(title)) continue;
 
         let dateStr = '';
         if (pubDate) {
