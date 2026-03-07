@@ -1,4 +1,5 @@
 let allBusinesses = [];
+let allNews = [];
 let currentCity = null;
 let currentCategory = null;
 let searchQuery = '';
@@ -43,11 +44,19 @@ const CAT_HERO_IMGS = {
 
 async function loadData() {
   try {
-    const res = await fetch('/businesses.json');
-    const data = await res.json();
-    allBusinesses = data.businesses || [];
+    const [bizRes, newsRes] = await Promise.all([
+      fetch('/businesses.json'),
+      fetch('/news.json')
+    ]);
+    const bizData = await bizRes.json();
+    allBusinesses = bizData.businesses || [];
+    try {
+      const newsData = await newsRes.json();
+      allNews = (newsData.news || []).filter(n => n.title.length > 15 && n.url);
+    } catch(e) { allNews = []; }
   } catch (e) {
     allBusinesses = [];
+    allNews = [];
   }
   route();
 }
@@ -135,6 +144,37 @@ function renderHome(app) {
       </div>
     </div>
 
+    ${allNews.length ? `
+    <div class="section">
+      <div class="section-header">
+        <h2>Local Parent News</h2>
+      </div>
+      <div class="news-carousel" id="news-carousel">
+        <button class="news-carousel-btn news-carousel-btn--left" id="news-prev" aria-label="Previous">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <div class="news-carousel-track" id="news-track">
+          ${allNews.slice(0, 12).map(n => {
+            const catIcon = getNewsCatIcon(n.category);
+            const date = n.published_at ? formatNewsDate(n.published_at) : '';
+            return `
+          <a href="${escHtml(n.url)}" target="_blank" rel="noopener" class="news-card">
+            <div class="news-card-cat"><span class="news-cat-dot" data-cat="${escHtml(n.category)}"></span>${escHtml(n.category)}</div>
+            <h3 class="news-card-title">${escHtml(n.title)}</h3>
+            ${n.snippet ? `<p class="news-card-snippet">${escHtml(n.snippet.substring(0, 100))}${n.snippet.length > 100 ? '...' : ''}</p>` : ''}
+            <div class="news-card-meta">
+              <span class="news-card-source">${escHtml(n.source)}</span>
+              ${date ? `<span class="news-card-date">${date}</span>` : ''}
+            </div>
+          </a>`;
+          }).join('')}
+        </div>
+        <button class="news-carousel-btn news-carousel-btn--right" id="news-next" aria-label="Next">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+      </div>
+    </div>` : ''}
+
     ${featured.length ? `
     <div class="section">
       <div class="section-header">
@@ -175,6 +215,8 @@ function renderHome(app) {
 
   const form = document.getElementById('subscribe-form');
   if (form) form.addEventListener('submit', handleSubscribe);
+
+  initNewsCarousel();
 }
 
 function renderCityPage(app, citySlug) {
@@ -396,6 +438,46 @@ async function handleSubscribe(e) {
     msg.style.color = '#F47C6A';
     msg.textContent = 'Something went wrong. Try again.';
   }
+}
+
+function getNewsCatIcon(cat) {
+  const map = { 'Education': 'book', 'Sports & Activities': 'ball', 'New Openings': 'store', 'Health & Safety': 'heart', 'Traffic & Construction': 'road', 'Events': 'calendar', 'Community': 'people' };
+  return map[cat] || 'news';
+}
+
+function formatNewsDate(dateStr) {
+  try {
+    const d = new Date(dateStr + 'T00:00:00');
+    const now = new Date();
+    const diff = Math.floor((now - d) / (1000 * 60 * 60 * 24));
+    if (diff === 0) return 'Today';
+    if (diff === 1) return 'Yesterday';
+    if (diff < 7) return diff + ' days ago';
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  } catch(e) { return ''; }
+}
+
+function initNewsCarousel() {
+  const track = document.getElementById('news-track');
+  const prev = document.getElementById('news-prev');
+  const next = document.getElementById('news-next');
+  if (!track || !prev || !next) return;
+
+  let scrollPos = 0;
+  const cardWidth = 300;
+  const gap = 16;
+  const step = cardWidth + gap;
+
+  next.addEventListener('click', () => {
+    const maxScroll = track.scrollWidth - track.clientWidth;
+    scrollPos = Math.min(scrollPos + step * 2, maxScroll);
+    track.scrollTo({ left: scrollPos, behavior: 'smooth' });
+  });
+
+  prev.addEventListener('click', () => {
+    scrollPos = Math.max(scrollPos - step * 2, 0);
+    track.scrollTo({ left: scrollPos, behavior: 'smooth' });
+  });
 }
 
 // SPA navigation

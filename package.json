@@ -18,7 +18,9 @@
     "scrape:haircuts": "node scrapers/yelp-kids-haircuts.js",
     "generate:descriptions": "node scripts/generate-descriptions.js",
     "enrich:websites": "node scrapers/enrich-from-websites.js",
-    "apply:brands": "node scripts/apply-brand-templates.js"
+    "apply:brands": "node scripts/apply-brand-templates.js",
+    "scrape:news": "node scrapers/news-scraper.js",
+    "export:news": "node scripts/export-news.js"
   },
   "dependencies": {
     "@sparticuz/chromium": "^131.0.0",

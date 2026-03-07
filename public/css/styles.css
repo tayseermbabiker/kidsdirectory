@@ -683,4 +683,131 @@ img { max-width: 100%; display: block; }
   .nav-links { gap: 4px; }
   .nav-links a { padding: 6px 10px; font-size: 0.8rem; }
   .stats-bar { flex-wrap: wrap; gap: 16px; padding: 24px 16px; }
+  .news-carousel-btn { display: none; }
+  .news-carousel-track { scroll-snap-type: x mandatory; }
+  .news-card { min-width: 260px; scroll-snap-align: start; }
 }
+
+/* === News Carousel === */
+.news-carousel {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.news-carousel-track {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 4px 0;
+}
+
+.news-carousel-track::-webkit-scrollbar { display: none; }
+
+.news-carousel-btn {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--white);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  transition: all 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.news-carousel-btn:hover {
+  background: var(--teal-light);
+  border-color: var(--teal);
+  color: var(--teal-dark);
+}
+
+.news-card {
+  flex-shrink: 0;
+  width: 300px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  text-decoration: none;
+  color: var(--text);
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.news-card:hover {
+  border-color: var(--teal);
+  box-shadow: 0 4px 12px rgba(59,167,160,0.12);
+  transform: translateY(-2px);
+}
+
+.news-card-cat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--teal-dark);
+}
+
+.news-cat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--teal);
+}
+
+.news-cat-dot[data-cat="Education"] { background: var(--sky); }
+.news-cat-dot[data-cat="Health & Safety"] { background: var(--coral); }
+.news-cat-dot[data-cat="Traffic & Construction"] { background: var(--golden); }
+.news-cat-dot[data-cat="Events"] { background: var(--purple); }
+.news-cat-dot[data-cat="New Openings"] { background: var(--teal); }
+.news-cat-dot[data-cat="Sports & Activities"] { background: var(--coral); }
+
+.news-card-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.news-card-snippet {
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.4;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.news-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.news-card-source { font-weight: 500; }
+.news-card-date { opacity: 0.8; }
