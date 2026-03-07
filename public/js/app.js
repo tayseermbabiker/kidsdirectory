@@ -529,6 +529,19 @@ document.addEventListener('click', (e) => {
   if (!link) return;
   const href = link.getAttribute('href');
   if (!href || href.startsWith('http') || href.startsWith('mailto') || href.startsWith('/go/')) return;
+  // Sign Up button — go home then scroll to subscribe form
+  if (href === '/#subscribe') {
+    e.preventDefault();
+    if (window.location.pathname !== '/') {
+      window.history.pushState(null, '', '/');
+      route();
+    }
+    setTimeout(() => {
+      const form = document.getElementById('subscribe-form');
+      if (form) form.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+    return;
+  }
   e.preventDefault();
   window.history.pushState(null, '', href);
   route();
