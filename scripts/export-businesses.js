@@ -6,7 +6,14 @@ const path = require('path');
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
 const TABLE = 'Businesses';
-const SITE_URL = 'https://kidcompass.netlify.app';
+const SITE_URL = 'https://kidsdirectory.netlify.app';
+
+// Upgrade Google Maps image URLs to higher resolution
+function upgradeGoogleImage(url) {
+  if (!url || !url.includes('googleusercontent.com')) return url;
+  // Replace size params like =w408-h306-k-no or =w80-h92-p-k-no with =w800-h600-k-no
+  return url.replace(/=[ws]\d+-h\d+[^&\s]*/, '=w800-h600-k-no');
+}
 
 async function exportBusinesses() {
   console.log('Exporting businesses from Airtable...');
@@ -36,7 +43,7 @@ async function exportBusinesses() {
     phone: r.fields.phone || '',
     website: r.fields.website || '',
     description: r.fields.description || '',
-    image_url: r.fields.image_url || '',
+    image_url: upgradeGoogleImage(r.fields.image_url || ''),
     rating: r.fields.rating || null,
     review_count: r.fields.review_count || null,
     price_range: r.fields.price_range || '',

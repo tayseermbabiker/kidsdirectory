@@ -22,24 +22,24 @@ const CAT_SVGS = {
 
 const CAT_FALLBACK_IMGS = {
   'Tutoring & Learning Centers':  'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=600&q=75&auto=format&fit=crop',
-  'Kids Activities & Classes':    'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=75&auto=format&fit=crop',
+  'Kids Activities & Classes':    'https://images.unsplash.com/photo-1549057736-889b732754a2?w=600&q=75&auto=format&fit=crop',
   'Birthday Party Venues':        'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600&q=75&auto=format&fit=crop',
   'Summer Camps & After School':  'https://images.unsplash.com/photo-1526976668912-1a811878dd37?w=600&q=75&auto=format&fit=crop',
   'Pediatric Dentists & Doctors': 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=600&q=75&auto=format&fit=crop',
-  'Daycares & Preschools':        'https://images.unsplash.com/photo-1587691592099-24045742c181?w=600&q=75&auto=format&fit=crop',
+  'Daycares & Preschools':        'https://images.unsplash.com/photo-1539795845756-4fadad2905ec?w=600&q=75&auto=format&fit=crop',
   'Family-Friendly Restaurants':  'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=75&auto=format&fit=crop',
-  'Kids Haircuts & Clothing':     'https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?w=600&q=75&auto=format&fit=crop',
+  'Kids Haircuts & Clothing':     'https://images.unsplash.com/photo-1761931403759-c18a3647e82e?w=600&q=75&auto=format&fit=crop',
 };
 
 const CAT_HERO_IMGS = {
   'Tutoring & Learning Centers':  'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=1400&q=70&auto=format&fit=crop',
-  'Kids Activities & Classes':    'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1400&q=70&auto=format&fit=crop',
+  'Kids Activities & Classes':    'https://images.unsplash.com/photo-1549057736-889b732754a2?w=1400&q=70&auto=format&fit=crop',
   'Birthday Party Venues':        'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=1400&q=70&auto=format&fit=crop',
   'Summer Camps & After School':  'https://images.unsplash.com/photo-1526976668912-1a811878dd37?w=1400&q=70&auto=format&fit=crop',
   'Pediatric Dentists & Doctors': 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=1400&q=70&auto=format&fit=crop',
-  'Daycares & Preschools':        'https://images.unsplash.com/photo-1587691592099-24045742c181?w=1400&q=70&auto=format&fit=crop',
+  'Daycares & Preschools':        'https://images.unsplash.com/photo-1539795845756-4fadad2905ec?w=1400&q=70&auto=format&fit=crop',
   'Family-Friendly Restaurants':  'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1400&q=70&auto=format&fit=crop',
-  'Kids Haircuts & Clothing':     'https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?w=1400&q=70&auto=format&fit=crop',
+  'Kids Haircuts & Clothing':     'https://images.unsplash.com/photo-1761931403759-c18a3647e82e?w=1400&q=70&auto=format&fit=crop',
 };
 
 async function loadData() {
