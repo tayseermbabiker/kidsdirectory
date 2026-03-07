@@ -125,121 +125,98 @@ async function scrapeFriscoISD(page) {
   }
 }
 
-// --- SCRAPER: Plano ISD News (browser) ---
-async function scalePlanoISD(page) {
-  console.log('\n--- Plano ISD News ---');
-  try {
-    await page.goto('https://www.pisd.edu/news', { waitUntil: 'domcontentloaded', timeout: 40000 });
-    await sleep(5000);
+// --- SCRAPER: Google News RSS (HTTP — covers Plano + Frisco from multiple sources) ---
+async function scrapeGoogleNewsRSS() {
+  console.log('\n--- Google News RSS ---');
+  const queries = [
+    'plano+OR+frisco+texas+kids+OR+school+OR+family+OR+park+when:30d',
+    'plano+OR+frisco+texas+camp+OR+event+OR+registration+OR+opening+when:30d',
+  ];
+  const articles = [];
+  const seen = new Set();
 
-    const articles = await page.evaluate(() => {
-      const items = [];
-      document.querySelectorAll('a').forEach(a => {
-        const title = a.innerText.trim();
-        const href = a.href;
-        if (title.length > 15 && title.length < 200 && href &&
-            (href.includes('/article/') || href.includes('/news/') || href.includes('/page/')) &&
-            !items.some(i => i.title === title) &&
-            !/menu|nav|footer|login|sign/i.test(title)) {
-          items.push({ title, url: href });
-        }
+  for (const q of queries) {
+    try {
+      const res = await fetch(`https://news.google.com/rss/search?q=${q}&hl=en-US&gl=US&ceid=US:en`, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
       });
-      if (items.length < 3) {
-        document.querySelectorAll('h2, h3, h4').forEach(h => {
-          const a = h.querySelector('a') || h.closest('a');
-          if (a) {
-            const title = h.innerText.trim();
-            const href = a.href;
-            if (title.length > 15 && title.length < 200 && !items.some(i => i.title === title)) {
-              items.push({ title, url: href });
-            }
-          }
-        });
-      }
-      return items.slice(0, 15);
-    });
+      const rss = await res.text();
+      const items = rss.match(/<item>[\s\S]*?<\/item>/g) || [];
 
-    articles.forEach(a => a.source = 'Plano ISD');
-    console.log(`  Found ${articles.length} articles`);
-    return articles;
-  } catch (err) {
-    console.error('  Error:', err.message);
-    return [];
+      for (const item of items) {
+        const title = ((item.match(/<title>(.*?)<\/title>/) || [])[1] || '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+        // Google News wraps links in a redirect — extract the actual link text
+        const link = (item.match(/<link\/>\s*(https?:\/\/[^\s<]+)/) || [])[1] ||
+                     (item.match(/<link>(https?:\/\/[^\s<]+)<\/link>/) || [])[1] || '';
+        const pubDate = (item.match(/<pubDate>(.*?)<\/pubDate>/) || [])[1] || '';
+        const source = (item.match(/<source[^>]*>(.*?)<\/source>/) || [])[1] || 'Google News';
+
+        if (!title || title.length < 15 || !link || seen.has(title)) continue;
+        seen.add(title);
+
+        // Must mention Plano, Frisco, or DFW-area terms
+        const t = (title + ' ' + source).toLowerCase();
+        if (!/(plano|frisco|collin county|dfw|north texas|pisd|fisd)/.test(t)) continue;
+
+        // Skip obituaries, crime, politics — not useful for parents
+        if (/obituary|murdered|homicide|indicted|sentenced|mugshot/i.test(title)) continue;
+
+        let dateStr = '';
+        if (pubDate) {
+          try { dateStr = new Date(pubDate).toISOString().split('T')[0]; } catch (e) {}
+        }
+
+        // Only include articles from the last 30 days
+        if (dateStr) {
+          const d = new Date(dateStr);
+          const cutoff = new Date();
+          cutoff.setDate(cutoff.getDate() - 30);
+          if (d < cutoff) continue;
+        }
+
+        articles.push({ title, url: link, source, dateStr });
+      }
+    } catch (err) {
+      console.error(`  Error with query "${q}":`, err.message);
+    }
   }
+
+  console.log(`  Found ${articles.length} relevant articles`);
+  return articles;
 }
 
-// --- SCRAPER: Community Impact (browser) ---
-async function scrapeCommunityImpact(page) {
+// --- SCRAPER: Community Impact Homepage (HTTP — Plano/Frisco articles) ---
+async function scrapeCommunityImpact() {
   console.log('\n--- Community Impact ---');
   try {
-    // Try the main DFW page
-    await page.goto('https://communityimpact.com/news/dallas-fort-worth/', { waitUntil: 'domcontentloaded', timeout: 40000 });
-    await sleep(5000);
-
-    const articles = await page.evaluate(() => {
-      const items = [];
-      document.querySelectorAll('article a, .post a, a[href*="/news/"]').forEach(a => {
-        const title = (a.querySelector('h2, h3, h4') || a).innerText.trim();
-        const href = a.href;
-        if (title.length > 15 && title.length < 200 && href.includes('communityimpact.com') &&
-            !items.some(i => i.title === title) &&
-            !/subscribe|newsletter|advertise/i.test(title)) {
-          items.push({ title, url: href });
-        }
-      });
-      return items.slice(0, 15);
+    const res = await fetch('https://communityimpact.com/', {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
     });
+    const html = await res.text();
+    const articles = [];
+    // Find article links containing plano or frisco in URL
+    const linkRegex = /<a[^>]*href="(https?:\/\/communityimpact\.com\/dallas-fort-worth\/(?:plano|frisco)[^"]*)"[^>]*>([^<]*)<\/a>/gi;
+    let match;
+    while ((match = linkRegex.exec(html)) !== null) {
+      const url = match[1];
+      let title = match[2].trim();
+      if (title.length < 15 || title.length > 200) continue;
+      if (/subscribe|newsletter|advertise/i.test(title)) continue;
+      if (articles.some(a => a.url === url)) continue;
+      articles.push({ title, url, source: 'Community Impact' });
+    }
 
-    // Filter for Plano/Frisco relevance
-    const relevant = articles.filter(a => {
-      const t = a.title.toLowerCase();
-      return t.includes('plano') || t.includes('frisco') || t.includes('collin') ||
-             t.includes('dfw') || t.includes('texas') || isRelevant(a.title, '');
-    });
+    // Also extract from heading tags that contain links
+    const headingRegex = /<h[234][^>]*>[\s\S]*?<a[^>]*href="(https?:\/\/communityimpact\.com\/dallas-fort-worth\/(?:plano|frisco)[^"]*)"[^>]*>([\s\S]*?)<\/a>/gi;
+    while ((match = headingRegex.exec(html)) !== null) {
+      const url = match[1];
+      const title = match[2].replace(/<[^>]+>/g, '').trim();
+      if (title.length < 15 || title.length > 200) continue;
+      if (articles.some(a => a.url === url)) continue;
+      articles.push({ title, url, source: 'Community Impact' });
+    }
 
-    relevant.forEach(a => a.source = 'Community Impact');
-    console.log(`  Found ${relevant.length} relevant articles (of ${articles.length} total)`);
-    return relevant;
-  } catch (err) {
-    console.error('  Error:', err.message);
-    return [];
-  }
-}
-
-// --- SCRAPER: City of Plano News (browser) ---
-async function scrapePlanoCity(page) {
-  console.log('\n--- City of Plano ---');
-  try {
-    await page.goto('https://www.plano.gov/1862/All-News-Releases', { waitUntil: 'domcontentloaded', timeout: 40000 });
-    await sleep(5000);
-
-    const articles = await page.evaluate(() => {
-      const items = [];
-      document.querySelectorAll('a').forEach(a => {
-        const title = a.innerText.trim();
-        const href = a.href;
-        if (title.length > 15 && title.length < 200 && href &&
-            (href.includes('/news/') || href.includes('/CivicAlerts') || href.includes('/newsflash') || href.includes('/Archive')) &&
-            !items.some(i => i.title === title) &&
-            !/more|view all|subscribe|rss|menu/i.test(title)) {
-          items.push({ title, url: href });
-        }
-      });
-      // Fallback
-      if (items.length < 3) {
-        document.querySelectorAll('.listing a, .news a, h3 a, h4 a').forEach(a => {
-          const title = a.innerText.trim();
-          const href = a.href;
-          if (title.length > 15 && title.length < 200 && !items.some(i => i.title === title)) {
-            items.push({ title, url: href });
-          }
-        });
-      }
-      return items.slice(0, 15);
-    });
-
-    articles.forEach(a => a.source = 'City of Plano');
-    console.log(`  Found ${articles.length} articles`);
+    console.log(`  Found ${articles.length} Plano/Frisco articles`);
     return articles;
   } catch (err) {
     console.error('  Error:', err.message);
@@ -362,26 +339,23 @@ async function main() {
   const existing = await fetchExistingUrls();
   console.log(`Existing news items: ${existing.size}`);
 
-  // Phase 1: HTTP scrapers
+  // Phase 1: HTTP scrapers (fast, no browser needed)
   let allArticles = [];
   const friscoAlerts = await scrapeFriscoCityAlerts();
   allArticles.push(...friscoAlerts);
 
-  // Phase 2: Browser scrapers
+  const googleNews = await scrapeGoogleNewsRSS();
+  allArticles.push(...googleNews);
+
+  const communityImpact = await scrapeCommunityImpact();
+  allArticles.push(...communityImpact);
+
+  // Phase 2: Browser scrapers (only Frisco ISD needs browser)
   const { browser, context } = await launchBrowser();
   const page = await context.newPage();
 
   const friscoISD = await scrapeFriscoISD(page);
   allArticles.push(...friscoISD);
-
-  const planoISD = await scalePlanoISD(page);
-  allArticles.push(...planoISD);
-
-  const communityImpact = await scrapeCommunityImpact(page);
-  allArticles.push(...communityImpact);
-
-  const planoCity = await scrapePlanoCity(page);
-  allArticles.push(...planoCity);
 
   await browser.close();
 
