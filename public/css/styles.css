@@ -544,9 +544,34 @@ img { max-width: 100%; display: block; }
 
 .subscribe-form {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   max-width: 420px;
   margin: 0 auto;
+  justify-content: center;
+}
+
+.subscribe-cities {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  width: 100%;
+}
+
+.city-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.city-check input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--teal);
+  cursor: pointer;
 }
 
 .subscribe-form input {

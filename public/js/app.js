@@ -188,6 +188,10 @@ function renderHome(app) {
         <p>School updates, registration deadlines, new openings, and things to do with kids this weekend.</p>
         <form class="subscribe-form" id="subscribe-form">
           <input type="email" name="email" placeholder="Your email address" required>
+          <div class="subscribe-cities">
+            <label class="city-check"><input type="checkbox" name="city" value="Plano" checked> Plano</label>
+            <label class="city-check"><input type="checkbox" name="city" value="Frisco" checked> Frisco</label>
+          </div>
           <button type="submit">Count Me In</button>
         </form>
         <p id="subscribe-msg" style="margin-top:12px;display:none;"></p>
@@ -417,13 +421,21 @@ async function handleSubscribe(e) {
   e.preventDefault();
   const form = e.target;
   const email = form.querySelector('input[name="email"]').value;
+  const cities = [...form.querySelectorAll('input[name="city"]:checked')].map(c => c.value);
   const msg = document.getElementById('subscribe-msg');
+
+  if (cities.length === 0) {
+    msg.style.display = 'block';
+    msg.style.color = '#F47C6A';
+    msg.textContent = 'Please select at least one city.';
+    return;
+  }
 
   try {
     const res = await fetch('/api/subscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
+      body: JSON.stringify({ email, cities })
     });
     const data = await res.json();
     msg.style.display = 'block';

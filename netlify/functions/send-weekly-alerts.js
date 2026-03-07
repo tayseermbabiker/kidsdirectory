@@ -7,12 +7,13 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const ALERTS_SECRET = process.env.ALERTS_SECRET;
 const SITE_URL = process.env.URL || 'https://kidsdirectory.netlify.app';
 
+// Newsletter priority: New Openings, Events, Sports first (Education already on site)
 const CAT_WEIGHT = {
-  'Education': 6,
+  'New Openings': 6,
+  'Events': 5,
   'Sports & Activities': 5,
-  'New Openings': 4,
   'Health & Safety': 3,
-  'Events': 2,
+  'Education': 2,
   'Local Impact': 1,
   'Community': 1
 };
@@ -37,24 +38,27 @@ exports.handler = async (event) => {
       return { statusCode: 200, body: JSON.stringify({ message: 'No recent news to send' }) };
     }
 
-    // 3. Pick top 7 news items by priority
-    const topNews = prioritizeNews(news, 7);
-
-    // 4. Build date range for subject
+    // 3. Build date range for subject
     const monday = getNextMonday();
     const sunday = new Date(monday);
     sunday.setDate(sunday.getDate() + 6);
     const fmt = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const subject = `This Week in Plano & Frisco — ${fmt(monday)} to ${fmt(sunday)}`;
 
-    // 5. Send via Resend batch
+    // 4. Build personalized emails per subscriber (filtered by their cities)
     const resend = new Resend(RESEND_API_KEY);
-    const emails = subscribers.map(sub => ({
-      from: 'KidCompass <weekly@kidsdirectory.netlify.app>',
-      to: sub.email,
-      subject,
-      html: buildEmailHtml(sub, topNews, monday, sunday)
-    }));
+    const emails = subscribers.map(sub => {
+      // Filter news relevant to subscriber's cities
+      const cityNews = filterNewsByCities(news, sub.cities);
+      const topNews = prioritizeNews(cityNews.length >= 3 ? cityNews : news, 7);
+      const cityLabel = sub.cities.join(' & ');
+      const subject = `This Week in ${cityLabel} — ${fmt(monday)} to ${fmt(sunday)}`;
+      return {
+        from: 'KidCompass <weekly@kidsdirectory.netlify.app>',
+        to: sub.email,
+        subject,
+        html: buildEmailHtml(sub, topNews, monday, sunday)
+      };
+    });
 
     // Resend batch supports up to 100 emails per call
     for (let i = 0; i < emails.length; i += 100) {
@@ -111,6 +115,7 @@ async function fetchSubscribers() {
         id: r.id,
         email: r.fields.email,
         first_name: r.fields.first_name || '',
+        cities: (r.fields.cities || 'Plano\nFrisco').split('\n').map(s => s.trim()).filter(Boolean),
         unsubscribe_token: r.fields.unsubscribe_token || ''
       });
     }
@@ -140,6 +145,15 @@ async function fetchRecentNews() {
     offset = data.offset || null;
   } while (offset);
   return records;
+}
+
+function filterNewsByCities(news, cities) {
+  if (!cities || cities.length === 0) return news;
+  const cityLower = cities.map(c => c.toLowerCase());
+  return news.filter(n => {
+    const text = ((n.title || '') + ' ' + (n.snippet || '')).toLowerCase();
+    return cityLower.some(c => text.includes(c));
+  });
 }
 
 function prioritizeNews(news, max) {
