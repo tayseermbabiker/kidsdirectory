@@ -12,6 +12,11 @@
   to = "/.netlify/functions/subscribe"
   status = 200
 
+[[redirects]]
+  from = "/api/send-weekly-alerts"
+  to = "/.netlify/functions/send-weekly-alerts"
+  status = 200
+
 # Legal pages
 [[redirects]]
   from = "/privacy"
