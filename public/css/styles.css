@@ -113,6 +113,19 @@ img { max-width: 100%; display: block; }
 .nav-saved:hover { border-color: var(--coral); }
 .nav-saved svg { width: 14px; height: 14px; }
 
+.nav-signup {
+  background: var(--teal);
+  color: var(--white) !important;
+  border-radius: 8px;
+  font-weight: 500;
+  padding: 8px 16px !important;
+  font-size: 0.82rem !important;
+  transition: background 0.2s;
+}
+.nav-signup:hover {
+  background: var(--teal-dark);
+}
+
 /* === HERO === */
 .hero {
   position: relative;
@@ -615,6 +628,41 @@ img { max-width: 100%; display: block; }
 
 .footer-links a { color: var(--muted); transition: color 0.2s; }
 .footer-links a:hover { color: var(--teal); }
+
+.footer-legal {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 16px;
+  font-size: 0.75rem;
+}
+.footer-legal a { color: #999; transition: color 0.2s; }
+.footer-legal a:hover { color: var(--teal); }
+
+/* === LEGAL PAGES === */
+.legal-content h2 {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 28px 0 10px;
+  color: var(--text);
+}
+.legal-content p {
+  font-size: 0.88rem;
+  color: #444;
+  line-height: 1.8;
+  margin-bottom: 12px;
+}
+.legal-content ul {
+  margin: 0 0 16px 20px;
+  font-size: 0.88rem;
+  color: #444;
+  line-height: 1.8;
+}
+.legal-content a {
+  color: var(--teal);
+  text-decoration: underline;
+}
 
 /* === PAGE HEADER (category/city pages) === */
 .page-header {

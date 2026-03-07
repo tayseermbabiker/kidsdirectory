@@ -85,6 +85,9 @@ function route() {
   }
 
   if (path === '/saved') { renderSavedPage(app); return; }
+  if (path === '/privacy') { renderPrivacyPage(app); return; }
+  if (path === '/terms') { renderTermsPage(app); return; }
+  if (path === '/about') { renderAboutPage(app); return; }
 
   renderHome(app);
 }
@@ -515,6 +518,103 @@ document.addEventListener('click', (e) => {
   route();
   window.scrollTo(0, 0);
 });
+
+// === LEGAL PAGES ===
+
+function renderLegalPage(app, title, content) {
+  app.innerHTML = `
+    <div class="page-header">
+      <div class="page-header-inner">
+        <div class="breadcrumb"><a href="/">Home</a> / ${title}</div>
+        <h1>${title}</h1>
+      </div>
+    </div>
+    <div class="section" style="max-width:760px;margin:0 auto;padding:32px 24px;">
+      <div class="legal-content">${content}</div>
+    </div>`;
+}
+
+function renderPrivacyPage(app) {
+  renderLegalPage(app, 'Privacy Policy', `
+    <p><strong>Last updated:</strong> March 2026</p>
+    <p>KidCompass operates kidsdirectory.netlify.app. This page explains how we collect, use, and protect your information.</p>
+
+    <h2>Information We Collect</h2>
+    <p><strong>Email address</strong> — only if you subscribe to our newsletter. We do not collect names, payment info, or any data from children.</p>
+    <p><strong>Usage data</strong> — we track which business pages are viewed (click counts) to improve our listings. No personal information is tied to these counts.</p>
+
+    <h2>How We Use Your Information</h2>
+    <ul>
+      <li>We send a weekly newsletter with curated local news and recommendations (if you subscribe)</li>
+      <li>We improve our directory listings based on aggregate usage</li>
+    </ul>
+
+    <h2>What We Don't Do</h2>
+    <ul>
+      <li>We do not sell or share your email with third parties</li>
+      <li>We do not use advertising trackers or cookies</li>
+      <li>We do not collect data from children under 13</li>
+    </ul>
+
+    <h2>Third-Party Services</h2>
+    <p>We use <strong>Airtable</strong> to store subscriber emails, <strong>Netlify</strong> for hosting, and <strong>Google Maps</strong> for embedded maps on business pages. Each has their own privacy policy.</p>
+
+    <h2>Unsubscribe</h2>
+    <p>Every email includes an unsubscribe link. You can also email us to request removal of your data.</p>
+
+    <h2>Contact</h2>
+    <p>Questions? Email us at <a href="mailto:hello@kidcompass.com">hello@kidcompass.com</a></p>
+  `);
+}
+
+function renderTermsPage(app) {
+  renderLegalPage(app, 'Terms of Service', `
+    <p><strong>Last updated:</strong> March 2026</p>
+    <p>By using KidCompass, you agree to these terms.</p>
+
+    <h2>What KidCompass Is</h2>
+    <p>KidCompass is a free directory of kids services in Plano and Frisco, TX. We curate listings from public sources (Google Maps, Yelp) and add editorial content to help parents make informed decisions.</p>
+
+    <h2>No Endorsement</h2>
+    <p>Listings on KidCompass are for informational purposes only. We do not endorse, guarantee, or verify any business listed. Always do your own research, visit in person, and verify credentials before enrolling your child.</p>
+
+    <h2>Accuracy</h2>
+    <p>We strive to keep information accurate and up-to-date, but business hours, pricing, and services can change. If you notice incorrect information, please <a href="mailto:hello@kidcompass.com">let us know</a>.</p>
+
+    <h2>News Content</h2>
+    <p>Our news section curates headlines and links from public sources. We link back to the original source for full articles. All content remains the property of its respective publishers.</p>
+
+    <h2>User Conduct</h2>
+    <p>Do not use automated tools to scrape this site or submit false information through our forms.</p>
+
+    <h2>Limitation of Liability</h2>
+    <p>KidCompass is provided "as is" without warranties. We are not liable for any decisions made based on information found on this site.</p>
+
+    <h2>Contact</h2>
+    <p>Questions? Email <a href="mailto:hello@kidcompass.com">hello@kidcompass.com</a></p>
+  `);
+}
+
+function renderAboutPage(app) {
+  renderLegalPage(app, 'About KidCompass', `
+    <h2>For Parents, By Parents</h2>
+    <p>KidCompass helps parents in Plano and Frisco, TX find the best services for their kids — from tutoring centers and swim classes to birthday party venues and pediatricians.</p>
+
+    <h2>What Makes Us Different</h2>
+    <ul>
+      <li><strong>Curated, not cluttered</strong> — we focus on 8 categories that matter most to families</li>
+      <li><strong>Editorial content</strong> — our "KidCompass Take" tells you what to actually expect, not just what the business says about itself</li>
+      <li><strong>Local news</strong> — we surface school updates, registration deadlines, new openings, and events from local sources</li>
+      <li><strong>Free forever</strong> — no ads, no promoted listings, no paywall</li>
+    </ul>
+
+    <h2>Our Cities</h2>
+    <p>We currently cover <strong>Plano</strong> and <strong>Frisco</strong>, Texas — two of the best cities in DFW for raising kids. More cities coming soon.</p>
+
+    <h2>Get in Touch</h2>
+    <p>Have a suggestion, correction, or just want to say hi? Email us at <a href="mailto:hello@kidcompass.com">hello@kidcompass.com</a></p>
+  `);
+}
 
 // Init
 loadData();
