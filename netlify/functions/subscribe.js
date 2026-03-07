@@ -28,18 +28,21 @@ exports.handler = async (event) => {
     }
 
     // Check for existing subscriber
-    const checkUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(TABLE_NAME)}?filterByFormula={email}="${email}"`;
+    const safeEmail = email.replace(/"/g, '\\"');
+    const checkUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(TABLE_NAME)}?filterByFormula=${encodeURIComponent(`{email}="${safeEmail}"`)}`;
     const checkRes = await fetch(checkUrl, {
       headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` }
     });
     const checkData = await checkRes.json();
 
     if (checkData.records && checkData.records.length > 0) {
-      return { statusCode: 200, headers, body: JSON.stringify({ message: 'Already subscribed' }) };
+      return { statusCode: 200, headers, body: JSON.stringify({ message: "You're already subscribed!" }) };
     }
 
-    // Create subscriber
+    // Create subscriber (categories/cities are multilineText in Airtable)
     const token = crypto.randomBytes(32).toString('hex');
+    const defaultCategories = (categories || []).join('\n') || 'All';
+    const defaultCities = (cities || []).join('\n') || 'Plano\nFrisco';
     const createUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(TABLE_NAME)}`;
     const createRes = await fetch(createUrl, {
       method: 'POST',
@@ -51,8 +54,8 @@ exports.handler = async (event) => {
         fields: {
           email,
           first_name: first_name || '',
-          categories: categories || ['Tutoring & Learning Centers', 'Kids Activities & Classes'],
-          cities: cities || ['Plano', 'Frisco'],
+          categories: defaultCategories,
+          cities: defaultCities,
           is_active: true,
           created_at: new Date().toISOString().split('T')[0],
           unsubscribe_token: token

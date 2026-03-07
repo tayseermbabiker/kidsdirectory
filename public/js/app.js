@@ -425,7 +425,7 @@ async function handleSubscribe(e) {
     const data = await res.json();
     msg.style.display = 'block';
     msg.style.color = '#3BA7A0';
-    msg.textContent = data.message || "You're in! Welcome to the community.";
+    msg.textContent = data.message || "You're in! We'll send you the best picks weekly.";
     form.reset();
   } catch (err) {
     msg.style.display = 'block';
