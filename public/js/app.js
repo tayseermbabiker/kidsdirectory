@@ -463,20 +463,14 @@ function initNewsCarousel() {
   const next = document.getElementById('news-next');
   if (!track || !prev || !next) return;
 
-  let scrollPos = 0;
-  const cardWidth = 300;
-  const gap = 16;
-  const step = cardWidth + gap;
+  const step = 632; // 2 cards (300px each) + 2 gaps (16px)
 
   next.addEventListener('click', () => {
-    const maxScroll = track.scrollWidth - track.clientWidth;
-    scrollPos = Math.min(scrollPos + step * 2, maxScroll);
-    track.scrollTo({ left: scrollPos, behavior: 'smooth' });
+    track.scrollBy({ left: step, behavior: 'smooth' });
   });
 
   prev.addEventListener('click', () => {
-    scrollPos = Math.max(scrollPos - step * 2, 0);
-    track.scrollTo({ left: scrollPos, behavior: 'smooth' });
+    track.scrollBy({ left: -step, behavior: 'smooth' });
   });
 }
 
