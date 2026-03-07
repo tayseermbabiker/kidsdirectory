@@ -16,7 +16,9 @@
     "scrape:daycares": "node scrapers/yelp-daycares.js",
     "scrape:restaurants": "node scrapers/yelp-family-restaurants.js",
     "scrape:haircuts": "node scrapers/yelp-kids-haircuts.js",
-    "generate:descriptions": "node scripts/generate-descriptions.js"
+    "generate:descriptions": "node scripts/generate-descriptions.js",
+    "enrich:websites": "node scrapers/enrich-from-websites.js",
+    "apply:brands": "node scripts/apply-brand-templates.js"
   },
   "dependencies": {
     "@sparticuz/chromium": "^131.0.0",

@@ -153,6 +153,7 @@ exports.handler = async (event) => {
       .slice(0, 5);
 
     // --- PARSED DATA ---
+    const isFranchise = f.business_type === 'franchise';
     const svc = parseServices(f.services);
     const reviews = cleanReviews(f.reviews);
     const compStats = getComparisonStats(f, categoryBiz);
@@ -403,6 +404,7 @@ exports.handler = async (event) => {
     .fit-list li::before { content:''; position:absolute; left:0; top:11px; width:18px; height:18px; background:#E8F5E9; border-radius:50%; }
     .fit-list li::after { content:''; position:absolute; left:5px; top:15px; width:8px; height:5px; border-left:2px solid #4CAF50; border-bottom:2px solid #4CAF50; transform:rotate(-45deg); }
 
+    .about-text { font-size:0.88rem; color:#444; line-height:1.8; }
     .compares-section p { font-size:0.88rem; color:#444; line-height:1.8; }
 
     .hours-grid { display:flex; flex-direction:column; background:#fff; border-radius:10px; border:1px solid #E4E4E7; overflow:hidden; }
@@ -484,12 +486,13 @@ exports.handler = async (event) => {
     </div>
 
     ${trialHtml}
-    ${takeHtml}
+    ${isFranchise ? takeHtml : ''}
     ${compHtml}
     ${glanceHtml}
-    ${expectHtml}
-    ${fitHtml}
-    ${comparesHtml}
+    ${f.description ? `<div class="section"><h2>About ${escHtml(f.name)}</h2><p class="about-text">${f.description.replace(/\n/g, '<br>')}</p></div>` : ''}
+    ${isFranchise ? expectHtml : ''}
+    ${isFranchise ? fitHtml : ''}
+    ${isFranchise ? comparesHtml : ''}
     ${reviewsHtml}
     ${hoursHtml}
     ${mapHtml}

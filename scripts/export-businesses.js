@@ -50,6 +50,7 @@ async function exportBusinesses() {
     what_to_expect: r.fields.what_to_expect || '',
     good_fit: r.fields.good_fit || '',
     how_it_compares: r.fields.how_it_compares || '',
+    business_type: r.fields.business_type || 'local',
     scraped_at: r.fields.scraped_at || ''
   }));
 
