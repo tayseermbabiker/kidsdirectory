@@ -1,6 +1,8 @@
 const fetch = require('node-fetch');
 
-const SITE_URL = process.env.URL || 'https://kidcompass.netlify.app';
+const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
+const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
+const SITE_URL = process.env.URL || 'https://kidsdirectory.netlify.app';
 
 let cachedBusinesses = null;
 let cacheTime = 0;
@@ -144,6 +146,19 @@ exports.handler = async (event) => {
       return { statusCode: 404, body: 'Business not found' };
     }
 
+    // Fire-and-forget click tracking
+    if (AIRTABLE_API_KEY && AIRTABLE_BASE_ID) {
+      fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/Businesses/${id}`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: { click_count: (biz.click_count || 0) + 1 } })
+      }).catch(() => {});
+    }
+
+    // Upgrade Google image to HD
+    if (biz.image_url && biz.image_url.includes('googleusercontent.com')) {
+      biz.image_url = biz.image_url.replace(/=[ws]\d+-h\d+[^&\s]*/, '=w800-h600-k-no');
+    }
     const f = biz;
     const categoryBiz = businesses.filter(b => b.category === f.category);
 
