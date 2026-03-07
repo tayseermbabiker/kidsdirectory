@@ -17,6 +17,11 @@
   to = "/.netlify/functions/send-weekly-alerts"
   status = 200
 
+[[redirects]]
+  from = "/api/vote"
+  to = "/.netlify/functions/vote"
+  status = 200
+
 # Legal pages
 [[redirects]]
   from = "/privacy"

@@ -301,6 +301,7 @@ function renderCategoryPage(app, citySlug, catSlug) {
         <select class="filter-select" id="filter-sort">
           <option value="rating">Highest Rated</option>
           <option value="reviews">Most Reviews</option>
+          <option value="recommended">Most Recommended</option>
           <option value="name">Name A-Z</option>
         </select>
       </div>
@@ -321,6 +322,7 @@ function renderCategoryPage(app, citySlug, catSlug) {
     filtered = [...filtered];
     if (sortVal === 'rating') filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
     if (sortVal === 'reviews') filtered.sort((a, b) => (b.review_count || 0) - (a.review_count || 0));
+    if (sortVal === 'recommended') filtered.sort((a, b) => (b.vote_count || 0) - (a.vote_count || 0));
     if (sortVal === 'name') filtered.sort((a, b) => a.name.localeCompare(b.name));
 
     const countEl = document.getElementById('results-count');
@@ -384,11 +386,12 @@ function renderBizCard(biz) {
     }
   }
   const ratingBadge = biz.rating >= 4.8 ? '<span class="biz-badge biz-badge--top">Top Rated</span>' : '';
+  const favBadge = biz.vote_count >= 3 ? '<span class="biz-badge biz-badge--fav">Parent Favorite</span>' : '';
   return `
     <a href="/go/${biz.id}" class="biz-card">
       <div class="biz-card-img-wrap">
         <img class="biz-card-img" src="${escHtml(imgSrc)}" alt="${escHtml(biz.name)}" loading="lazy">
-        ${ratingBadge}
+        ${favBadge || ratingBadge}
         <div class="biz-card-cat-pill">${escHtml(biz.category)}</div>
       </div>
       <div class="biz-card-body">
@@ -397,6 +400,7 @@ function renderBizCard(biz) {
         <div class="biz-card-meta">
           ${biz.rating ? `<div class="biz-card-rating">${renderStars(biz.rating)}<span class="biz-rating-num">${biz.rating}</span>${biz.review_count ? `<span class="biz-review-ct">(${biz.review_count.toLocaleString()})</span>` : ''}</div>` : ''}
           <span class="biz-card-city">${escHtml(biz.city)}, TX</span>
+          ${biz.vote_count ? `<span class="biz-card-votes">${biz.vote_count} rec.</span>` : ''}
         </div>
       </div>
     </a>

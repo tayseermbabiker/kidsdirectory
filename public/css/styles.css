@@ -403,6 +403,17 @@ img { max-width: 100%; display: block; }
   color: #fff;
 }
 
+.biz-badge--fav {
+  background: var(--teal);
+  color: #fff;
+}
+
+.biz-card-votes {
+  font-size: 0.72rem;
+  color: var(--teal);
+  font-weight: 500;
+}
+
 .biz-card-body {
   padding: 14px 18px 18px;
 }

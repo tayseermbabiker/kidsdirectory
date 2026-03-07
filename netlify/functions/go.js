@@ -446,6 +446,13 @@ exports.handler = async (event) => {
     .rtag { font-size:0.68rem; padding:2px 8px; background:#F5F5F5; border-radius:10px; color:#666; }
     .rtag-age { background:#E8F5F4; color:#2d8a84; font-weight:500; }
 
+    .vote-section { display:flex; align-items:center; gap:12px; margin-bottom:24px; flex-wrap:wrap; }
+    .vote-btn { display:inline-flex; align-items:center; gap:8px; padding:10px 20px; border-radius:24px; font-size:0.88rem; font-weight:600; cursor:pointer; border:2px solid #3BA7A0; background:#fff; color:#3BA7A0; transition:all 0.2s; }
+    .vote-btn:hover { background:#E8F6F5; }
+    .vote-btn.voted { background:#3BA7A0; color:#fff; border-color:#3BA7A0; cursor:default; }
+    .vote-btn svg { width:18px; height:18px; }
+    .vote-count { font-size:0.82rem; color:#6A6A6A; }
+
     .page-meta { display:flex; align-items:center; justify-content:center; gap:16px; padding:20px 24px; margin-top:40px; border-top:1px solid #E4E4E7; font-size:0.75rem; color:#999; flex-wrap:wrap; }
     .meta-link { color:#6A6A6A; text-decoration:none; border-bottom:1px dashed #CCC; }
     .meta-link:hover { color:#3BA7A0; border-color:#3BA7A0; }
@@ -500,6 +507,14 @@ exports.handler = async (event) => {
       <a class="quick-btn quick-btn-outline" href="${mapsUrl(f.address, f.name, f.city)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Directions</a>
     </div>
 
+    <div class="vote-section">
+      <button class="vote-btn" id="voteBtn" onclick="castVote()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z"/><path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg>
+        <span id="voteTxt">I Recommend This Place</span>
+      </button>
+      <span class="vote-count" id="voteCount">${f.vote_count ? f.vote_count + ' parents recommend this' : ''}</span>
+    </div>
+
     ${trialHtml}
     ${isFranchise ? takeHtml : ''}
     ${compHtml}
@@ -552,7 +567,45 @@ exports.handler = async (event) => {
         });
       }
     }
+    // Voting
+    function getVotes() { try { return JSON.parse(localStorage.getItem('kc_votes') || '[]'); } catch(e) { return []; } }
+    function hasVoted() { return getVotes().includes(BIZ_ID); }
+    async function castVote() {
+      if (hasVoted()) return;
+      const btn = document.getElementById('voteBtn');
+      const txt = document.getElementById('voteTxt');
+      const count = document.getElementById('voteCount');
+      btn.disabled = true;
+      txt.textContent = 'Sending...';
+      try {
+        const res = await fetch('/api/vote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: BIZ_ID })
+        });
+        const data = await res.json();
+        const votes = getVotes();
+        votes.push(BIZ_ID);
+        localStorage.setItem('kc_votes', JSON.stringify(votes));
+        btn.classList.add('voted');
+        txt.textContent = 'Recommended!';
+        count.textContent = data.vote_count + ' parents recommend this';
+      } catch(e) {
+        txt.textContent = 'Try again';
+        btn.disabled = false;
+      }
+    }
+    function updateVoteBtn() {
+      if (hasVoted()) {
+        const btn = document.getElementById('voteBtn');
+        const txt = document.getElementById('voteTxt');
+        btn.classList.add('voted');
+        txt.textContent = 'Recommended!';
+        btn.disabled = true;
+      }
+    }
     updateSaveBtn();
+    updateVoteBtn();
   </script>
 </body>
 </html>`;
