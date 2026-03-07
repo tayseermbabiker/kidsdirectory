@@ -311,8 +311,52 @@ function parseDate(str) {
   }
 }
 
+// --- AIRTABLE: Delete news older than 60 days ---
+async function cleanupOldNews() {
+  console.log('\n--- Cleaning up old news ---');
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 60);
+  const cutoffStr = cutoff.toISOString().split('T')[0];
+
+  const toDelete = [];
+  let offset = null;
+  do {
+    const params = new URLSearchParams({ pageSize: '100' });
+    params.set('filterByFormula', `IS_BEFORE({published_at}, '${cutoffStr}')`);
+    params.append('fields[]', 'title');
+    if (offset) params.set('offset', offset);
+    const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(NEWS_TABLE)}?${params}`, {
+      headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` }
+    });
+    const data = await res.json();
+    for (const r of (data.records || [])) toDelete.push(r.id);
+    offset = data.offset || null;
+  } while (offset);
+
+  if (toDelete.length === 0) {
+    console.log('  No old news to clean up');
+    return;
+  }
+
+  // Delete in batches of 10
+  for (let i = 0; i < toDelete.length; i += 10) {
+    const batch = toDelete.slice(i, i + 10);
+    const params = batch.map(id => `records[]=${id}`).join('&');
+    const res = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(NEWS_TABLE)}?${params}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` }
+    });
+    if (!res.ok) console.error('  Delete error:', await res.text());
+    if (i + 10 < toDelete.length) await sleep(250);
+  }
+  console.log(`  Deleted ${toDelete.length} articles older than 60 days`);
+}
+
 async function main() {
   console.log('=== KidCompass News Scraper ===');
+
+  // Clean up old news first (keeps Airtable under free tier limit)
+  await cleanupOldNews();
 
   // Get existing URLs to avoid dupes
   const existing = await fetchExistingUrls();
