@@ -245,6 +245,11 @@ img { max-width: 100%; display: block; }
   align-items: center;
   margin-bottom: 28px;
 }
+.section-count {
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: 400;
+}
 
 .section h2 {
   font-family: 'Poppins', sans-serif;

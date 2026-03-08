@@ -225,22 +225,33 @@ function renderCityPage(app, citySlug) {
   const cityName = city ? city.name : citySlug;
   const stateAbbr = city ? city.state : 'TX';
   const businesses = allBusinesses.filter(b => b.city.toLowerCase() === citySlug || slugify(b.city) === citySlug);
+  const neighborhoods = city && city.neighborhoods ? city.neighborhoods : null;
 
-  app.innerHTML = `
-    <div class="page-header">
-      <div class="page-header-inner">
-        <div class="breadcrumb"><a href="/">Home</a> / ${cityName}</div>
-        <h1>Kids Services in ${cityName}, ${stateAbbr}</h1>
-        <p>${businesses.length} listings across all categories</p>
+  if (neighborhoods) {
+    // Grouped layout for cities with neighborhoods (Baltimore)
+    const areaCount = neighborhoods.filter(n => businesses.some(b => b.neighborhood === n)).length || neighborhoods.length;
+    app.innerHTML = `
+      <div class="page-header">
+        <div class="page-header-inner">
+          <div class="breadcrumb"><a href="/">Home</a> / ${cityName}</div>
+          <h1>Kids Services in ${cityName}, ${stateAbbr}</h1>
+          <p>${businesses.length} listings across ${areaCount} areas</p>
+        </div>
       </div>
-    </div>
-    <div class="section">
-      <div class="cat-grid">
-        ${CATEGORIES.map((c, i) => {
-          const count = businesses.filter(b => b.category === c.name).length;
-          const color = CAT_COLORS[i % CAT_COLORS.length];
-          const icon = CAT_SVGS[c.name] || '';
-          return `
+      ${neighborhoods.map(hood => {
+        const hoodBiz = businesses.filter(b => b.neighborhood === hood);
+        return `
+      <div class="section">
+        <div class="section-header">
+          <h2>${hood}</h2>
+          <span class="section-count">${hoodBiz.length} listings</span>
+        </div>
+        <div class="cat-grid">
+          ${CATEGORIES.map((c, i) => {
+            const count = hoodBiz.filter(b => b.category === c.name).length;
+            const color = CAT_COLORS[i % CAT_COLORS.length];
+            const icon = CAT_SVGS[c.name] || '';
+            return `
           <a href="/${citySlug}/${c.slug}" class="cat-card" data-color="${color}">
             <div class="cat-card-icon">${icon}</div>
             <div class="cat-card-text">
@@ -248,19 +259,40 @@ function renderCityPage(app, citySlug) {
               <p>${count} listings</p>
             </div>
           </a>`;
-        }).join('')}
+          }).join('')}
+        </div>
+      </div>`;
+      }).join('')}
+    `;
+  } else {
+    // Simple layout for single cities (Plano, Frisco)
+    app.innerHTML = `
+      <div class="page-header">
+        <div class="page-header-inner">
+          <div class="breadcrumb"><a href="/">Home</a> / ${cityName}</div>
+          <h1>Kids Services in ${cityName}, ${stateAbbr}</h1>
+          <p>${businesses.length} listings across all categories</p>
+        </div>
       </div>
-    </div>
-    <div class="section">
-      <div class="section-header">
-        <h2>All Listings in ${cityName}</h2>
+      <div class="section">
+        <div class="cat-grid">
+          ${CATEGORIES.map((c, i) => {
+            const count = businesses.filter(b => b.category === c.name).length;
+            const color = CAT_COLORS[i % CAT_COLORS.length];
+            const icon = CAT_SVGS[c.name] || '';
+            return `
+          <a href="/${citySlug}/${c.slug}" class="cat-card" data-color="${color}">
+            <div class="cat-card-icon">${icon}</div>
+            <div class="cat-card-text">
+              <h3>${c.name}</h3>
+              <p>${count} listings</p>
+            </div>
+          </a>`;
+          }).join('')}
+        </div>
       </div>
-      <div class="biz-grid">
-        ${businesses.length ? businesses.map(renderBizCard).join('') :
-          '<div class="empty-state"><h3>No listings yet</h3><p>Check back soon!</p></div>'}
-      </div>
-    </div>
-  `;
+    `;
+  }
 }
 
 function renderCategoryPage(app, citySlug, catSlug) {
@@ -299,6 +331,9 @@ function renderCategoryPage(app, citySlug, catSlug) {
           <option value="all"${isAllCities ? ' selected' : ''}>All Cities</option>
           ${CITIES.map(c => `<option value="${c.slug}"${c.slug === citySlug ? ' selected' : ''}>${c.name}</option>`).join('')}
         </select>
+        <select class="filter-select" id="filter-hood" style="display:none;">
+          <option value="all">All Areas</option>
+        </select>
         <select class="filter-select" id="filter-sort">
           <option value="rating">Highest Rated</option>
           <option value="reviews">Most Reviews</option>
@@ -311,13 +346,31 @@ function renderCategoryPage(app, citySlug, catSlug) {
   `;
 
   const filterCity = document.getElementById('filter-city');
+  const filterHood = document.getElementById('filter-hood');
   const filterSort = document.getElementById('filter-sort');
+
+  function updateHoodFilter() {
+    const cityVal = filterCity.value;
+    const selectedCity = cityFromSlug(cityVal);
+    if (selectedCity && selectedCity.neighborhoods) {
+      filterHood.innerHTML = '<option value="all">All Areas</option>' +
+        selectedCity.neighborhoods.map(n => `<option value="${n}">${n}</option>`).join('');
+      filterHood.style.display = '';
+    } else {
+      filterHood.style.display = 'none';
+      filterHood.value = 'all';
+    }
+  }
 
   function applyFilters() {
     let filtered = allInCategory;
     const cityVal = filterCity.value;
     if (cityVal !== 'all') {
       filtered = filtered.filter(b => b.city.toLowerCase() === cityVal);
+    }
+    const hoodVal = filterHood.value;
+    if (hoodVal !== 'all') {
+      filtered = filtered.filter(b => b.neighborhood === hoodVal);
     }
     const sortVal = filterSort.value;
     filtered = [...filtered];
@@ -326,16 +379,19 @@ function renderCategoryPage(app, citySlug, catSlug) {
     if (sortVal === 'recommended') filtered.sort((a, b) => (b.vote_count || 0) - (a.vote_count || 0));
     if (sortVal === 'name') filtered.sort((a, b) => a.name.localeCompare(b.name));
 
+    const label = hoodVal !== 'all' ? hoodVal : (cityVal === 'all' ? 'All Cities' : (cityFromSlug(cityVal) || {}).name || cityVal);
     const countEl = document.getElementById('results-count');
-    if (countEl) countEl.textContent = `${filtered.length} listings in ${cityVal === 'all' ? 'All Cities' : (cityFromSlug(cityVal) || {}).name || cityVal}`;
+    if (countEl) countEl.textContent = `${filtered.length} listings in ${label}`;
 
     document.getElementById('results-grid').innerHTML = filtered.length ?
       filtered.map(renderBizCard).join('') :
       '<div class="empty-state"><h3>No listings found</h3><p>Try a different filter.</p></div>';
   }
 
-  filterCity.addEventListener('change', applyFilters);
+  filterCity.addEventListener('change', () => { updateHoodFilter(); applyFilters(); });
+  filterHood.addEventListener('change', applyFilters);
   filterSort.addEventListener('change', applyFilters);
+  updateHoodFilter();
   applyFilters();
 }
 

@@ -11,8 +11,17 @@ const SITE_URL = 'https://kidsdirectory.netlify.app';
 // Upgrade Google Maps image URLs to higher resolution
 function upgradeGoogleImage(url) {
   if (!url || !url.includes('googleusercontent.com')) return url;
-  // Replace size params like =w408-h306-k-no or =w80-h92-p-k-no with =w800-h600-k-no
   return url.replace(/=[ws]\d+-h\d+[^&\s]*/, '=w800-h600-k-no');
+}
+
+// Map Baltimore-area suburbs to "Baltimore" city, keep suburb as neighborhood
+const BALTIMORE_SUBURBS = ['columbia', 'towson', 'catonsville', 'severna park', 'ellicott city', 'lutherville', 'timonium'];
+function normalizeCity(city, neighborhood) {
+  const lower = (city || '').toLowerCase();
+  if (BALTIMORE_SUBURBS.includes(lower) || lower.includes('baltimore')) {
+    return { city: 'Baltimore', neighborhood: neighborhood || city };
+  }
+  return { city: city || 'Plano', neighborhood: neighborhood || '' };
 }
 
 async function exportBusinesses() {
@@ -32,13 +41,15 @@ async function exportBusinesses() {
     offset = data.offset || null;
   } while (offset);
 
-  const businesses = records.map(r => ({
+  const businesses = records.map(r => {
+    const loc = normalizeCity(r.fields.city, r.fields.neighborhood);
+    return {
     id: r.id,
     name: r.fields.name || '',
     slug: r.fields.slug || '',
     category: r.fields.category || '',
-    city: r.fields.city || 'Plano',
-    neighborhood: r.fields.neighborhood || '',
+    city: loc.city,
+    neighborhood: loc.neighborhood,
     address: r.fields.address || '',
     phone: r.fields.phone || '',
     website: r.fields.website || '',
@@ -60,7 +71,7 @@ async function exportBusinesses() {
     business_type: r.fields.business_type || 'local',
     vote_count: r.fields.vote_count || 0,
     scraped_at: r.fields.scraped_at || ''
-  }));
+  }});
 
   const output = {
     success: true,
