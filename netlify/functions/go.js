@@ -385,6 +385,9 @@ exports.handler = async (event) => {
     .quick-btn-outline:hover { border-color:#3BA7A0; color:#3BA7A0; }
     .quick-btn svg { width:15px; height:15px; }
 
+    .mention-nudge { font-size:0.82rem; color:#6A6A6A; margin-bottom:20px; padding:10px 16px; background:#F9FFFE; border:1px dashed #B2DFDB; border-radius:8px; }
+    .mention-nudge strong { color:#3BA7A0; }
+
     .trial-banner { display:flex; align-items:center; gap:8px; padding:12px 18px; background:#ECFDF5; border:1px solid #A7F3D0; border-radius:10px; margin-bottom:24px; font-size:0.85rem; font-weight:500; color:#1a7a3a; }
 
     .take-block { padding:18px 22px; background:#F0FFFE; border:1px solid #B2DFDB; border-left:4px solid #3BA7A0; border-radius:8px; margin-bottom:24px; }
@@ -503,6 +506,8 @@ exports.handler = async (event) => {
       ${f.phone ? `<a class="quick-btn quick-btn-outline" href="tel:${escHtml(f.phone.replace(/[^+\d]/g, ''))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>Call</a>` : ''}
       <a class="quick-btn quick-btn-outline" href="${mapsUrl(f.address, f.name, f.city)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Directions</a>
     </div>
+
+    ${f.phone ? `<p class="mention-nudge">When you call, let them know you found them on <strong>KiddosCompass</strong></p>` : ''}
 
     <div class="vote-section">
       <button class="vote-btn" id="voteBtn" onclick="castVote()">
