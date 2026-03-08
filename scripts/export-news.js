@@ -34,6 +34,7 @@ async function exportNews() {
     url: r.fields.url || '',
     source: r.fields.source || '',
     category: r.fields.category || '',
+    city: r.fields.city || '',
     image_url: r.fields.image_url || '',
     published_at: r.fields.published_at || ''
   }));

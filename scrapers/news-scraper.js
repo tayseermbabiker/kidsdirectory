@@ -33,6 +33,18 @@ function isRelevant(title, snippet) {
   return PARENT_KEYWORDS.some(kw => text.includes(kw));
 }
 
+function tagCity(title, source) {
+  const t = (title + ' ' + (source || '')).toLowerCase();
+  if (/plano|pisd|collin county/.test(t)) return 'Plano';
+  if (/frisco|fisd/.test(t)) return 'Frisco';
+  if (/columbia|howard county|ellicott city/.test(t)) return 'Baltimore';
+  if (/towson|baltimore county|lutherville|timonium/.test(t)) return 'Baltimore';
+  if (/catonsville|severna park/.test(t)) return 'Baltimore';
+  if (/maryland/.test(t)) return 'Baltimore';
+  if (/dfw|north texas|texas/.test(t)) return 'Plano';
+  return '';
+}
+
 function categorize(title, snippet) {
   const text = (title + ' ' + (snippet || '')).toLowerCase();
   if (/school|isd|pisd|fisd|education|teacher|student|enrollment|calendar|board|rezoning/.test(text)) return 'Education';
@@ -40,7 +52,7 @@ function categorize(title, snippet) {
   if (/open|coming soon|new .*(restaurant|store|shop|venue)|grand opening|grandscape|legacy west/.test(text)) return 'New Openings';
   if (/health|vaccine|measles|recall|safety|pediatric|flu|covid|water quality|boil/.test(text)) return 'Health & Safety';
   if (/event|festival|concert|fair|celebration|parade|firework|holiday|spring break|weekend/.test(text)) return 'Events';
-  return 'Local Impact';
+  return 'Community';
 }
 
 // --- SCRAPER: Frisco City Alerts (HTTP — server rendered) ---
@@ -129,11 +141,16 @@ async function scrapeFriscoISD(page) {
 async function scrapeGoogleNewsRSS() {
   console.log('\n--- Google News RSS ---');
   const queries = [
-    // Plano/Frisco TX
-    'plano+OR+frisco+texas+kids+OR+school+OR+family+OR+park+when:30d',
-    'plano+OR+frisco+texas+camp+OR+event+OR+registration+OR+opening+when:30d',
+    // Plano TX
+    'plano+texas+kids+OR+school+OR+family+OR+park+when:30d',
+    'plano+texas+camp+OR+event+OR+registration+OR+opening+when:30d',
+    // Frisco TX
+    'frisco+texas+kids+OR+school+OR+family+OR+park+when:30d',
+    'frisco+texas+camp+OR+event+OR+registration+OR+opening+when:30d',
     // Baltimore area MD
-    'columbia+OR+towson+OR+catonsville+maryland+kids+OR+school+OR+family+when:30d',
+    'columbia+maryland+kids+OR+school+OR+family+OR+camp+when:30d',
+    'towson+maryland+kids+OR+school+OR+family+OR+camp+when:30d',
+    'catonsville+OR+"severna+park"+maryland+kids+OR+school+OR+event+when:30d',
     'howard+county+OR+baltimore+county+maryland+camp+OR+event+OR+opening+when:30d',
   ];
   const articles = [];
@@ -164,8 +181,8 @@ async function scrapeGoogleNewsRSS() {
 
         // Skip obituaries, crime, generic national news — not useful for parents
         if (/obituary|murdered|homicide|indicted|sentenced|mugshot/i.test(title)) continue;
-        // Skip generic Texas/national stories not specific to Plano/Frisco
-        if (!/plano|frisco|pisd|fisd|collin county/i.test(title) && /statewide|texas legislature|governor|abbott/i.test(title)) continue;
+        // Skip generic state/national stories not specific to our cities
+        if (!/plano|frisco|pisd|fisd|collin county|columbia|towson|catonsville|severna park|howard county|baltimore county/i.test(title) && /statewide|legislature|governor|abbott|hogan/i.test(title)) continue;
 
         let dateStr = '';
         if (pubDate) {
@@ -260,6 +277,7 @@ async function pushToAirtable(articles) {
       url: a.url,
       source: a.source,
       category: categorize(a.title, a.snippet),
+      city: a.city || tagCity(a.title, a.source),
       published_at: a.dateStr ? parseDate(a.dateStr) : today,
       scraped_at: today
     }
