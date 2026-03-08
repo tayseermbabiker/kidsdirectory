@@ -15,13 +15,31 @@ function upgradeGoogleImage(url) {
 }
 
 // Map Baltimore-area suburbs to "Baltimore" city, keep suburb as neighborhood
-const BALTIMORE_SUBURBS = ['columbia', 'towson', 'catonsville', 'severna park', 'ellicott city', 'lutherville', 'timonium'];
 function normalizeCity(city, neighborhood) {
   const lower = (city || '').toLowerCase();
-  if (BALTIMORE_SUBURBS.includes(lower) || lower.includes('baltimore')) {
-    return { city: 'Baltimore', neighborhood: neighborhood || city };
+  if (lower === 'baltimore' || lower.includes('maryland') || lower.includes('md')) {
+    // Already Baltimore — map neighborhood to county
+    return { city: 'Baltimore', neighborhood: toCounty(neighborhood || '') };
+  }
+  // Check if city is actually a Baltimore suburb
+  const county = toCounty(city);
+  if (county) {
+    return { city: 'Baltimore', neighborhood: county };
   }
   return { city: city || 'Plano', neighborhood: neighborhood || '' };
+}
+
+function toCounty(name) {
+  const lower = (name || '').toLowerCase();
+  // Howard County
+  if (lower.includes('columbia') || lower.includes('ellicott') || lower.includes('howard')) return 'Howard County';
+  // Baltimore County
+  if (lower.includes('towson') || lower.includes('catonsville') || lower.includes('lutherville') || lower.includes('timonium') || lower.includes('baltimore county')) return 'Baltimore County';
+  // Anne Arundel County
+  if (lower.includes('severna park') || lower.includes('glen burnie') || lower.includes('annapolis') || lower.includes('anne arundel')) return 'Anne Arundel County';
+  // Harford County
+  if (lower.includes('bel air') || lower.includes('aberdeen') || lower.includes('edgewood') || lower.includes('harford')) return 'Harford County';
+  return '';
 }
 
 async function exportBusinesses() {

@@ -59,6 +59,17 @@ const SEARCHES = [
   // Kids Haircuts & Clothing
   { query: 'kids haircut salon Columbia MD', category: 'Kids Haircuts & Clothing' },
   { query: 'children clothing store Towson MD', category: 'Kids Haircuts & Clothing' },
+
+  // === HARFORD COUNTY, MD ===
+  { query: 'tutoring center Bel Air MD', category: 'Tutoring & Learning Centers' },
+  { query: 'kids dance class Bel Air MD', category: 'Kids Activities & Classes' },
+  { query: 'kids swim lessons Aberdeen MD', category: 'Kids Activities & Classes' },
+  { query: 'birthday party venue kids Bel Air MD', category: 'Birthday Party Venues' },
+  { query: 'summer camp kids Harford County MD', category: 'Summer Camps & After School' },
+  { query: 'pediatric dentist Bel Air MD', category: 'Pediatric Dentists & Doctors' },
+  { query: 'daycare preschool Bel Air MD', category: 'Daycares & Preschools' },
+  { query: 'family friendly restaurant Bel Air MD', category: 'Family-Friendly Restaurants' },
+  { query: 'kids haircut salon Bel Air MD', category: 'Kids Haircuts & Clothing' },
 ];
 
 function extractCity(address, query) {
@@ -67,10 +78,14 @@ function extractCity(address, query) {
   // Maryland → all grouped as "Baltimore"
   if (lower.includes('columbia') || lower.includes('ellicott city') || lower.includes('towson') ||
       lower.includes('lutherville') || lower.includes('timonium') || lower.includes('catonsville') ||
-      lower.includes('severna park') || lower.includes('howard county') || lower.includes('baltimore')) {
+      lower.includes('severna park') || lower.includes('glen burnie') || lower.includes('annapolis') ||
+      lower.includes('bel air') || lower.includes('aberdeen') || lower.includes('edgewood') ||
+      lower.includes('howard county') || lower.includes('baltimore') || lower.includes('anne arundel') ||
+      lower.includes('harford')) {
     return 'Baltimore';
   }
-  if (q.includes('columbia') || q.includes('towson') || q.includes('catonsville') || q.includes('severna park')) {
+  if (q.includes('columbia') || q.includes('towson') || q.includes('catonsville') || q.includes('severna park') ||
+      q.includes('bel air') || q.includes('harford')) {
     return 'Baltimore';
   }
   // Texas cities
@@ -82,10 +97,14 @@ function extractCity(address, query) {
 function extractNeighborhood(address, query) {
   const lower = (address || '').toLowerCase();
   const q = (query || '').toLowerCase();
-  if (lower.includes('columbia') || lower.includes('ellicott city') || q.includes('columbia')) return 'Columbia';
-  if (lower.includes('towson') || lower.includes('lutherville') || lower.includes('timonium') || q.includes('towson')) return 'Towson';
-  if (lower.includes('catonsville') || q.includes('catonsville')) return 'Catonsville';
-  if (lower.includes('severna park') || q.includes('severna park')) return 'Severna Park';
+  // Howard County
+  if (lower.includes('columbia') || lower.includes('ellicott city') || lower.includes('howard county') || q.includes('columbia') || q.includes('howard county')) return 'Howard County';
+  // Baltimore County
+  if (lower.includes('towson') || lower.includes('lutherville') || lower.includes('timonium') || lower.includes('catonsville') || lower.includes('baltimore county') || q.includes('towson') || q.includes('catonsville')) return 'Baltimore County';
+  // Anne Arundel County
+  if (lower.includes('severna park') || lower.includes('glen burnie') || lower.includes('annapolis') || lower.includes('anne arundel') || q.includes('severna park') || q.includes('anne arundel')) return 'Anne Arundel County';
+  // Harford County
+  if (lower.includes('bel air') || lower.includes('aberdeen') || lower.includes('edgewood') || lower.includes('harford') || q.includes('bel air') || q.includes('harford')) return 'Harford County';
   return '';
 }
 

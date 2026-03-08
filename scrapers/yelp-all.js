@@ -40,6 +40,16 @@ const SEARCHES = [
   { term: 'family+friendly+restaurant+kids', loc: 'Towson%2C+MD', category: 'Family-Friendly Restaurants', city: 'Baltimore' },
   { term: 'kids+haircut+children+clothing', loc: 'Columbia%2C+MD', category: 'Kids Haircuts & Clothing', city: 'Baltimore' },
   { term: 'kids+haircut+children+clothing', loc: 'Severna+Park%2C+MD', category: 'Kids Haircuts & Clothing', city: 'Baltimore' },
+
+  // === HARFORD COUNTY, MD ===
+  { term: 'tutoring+center', loc: 'Bel+Air%2C+MD', category: 'Tutoring & Learning Centers', city: 'Baltimore' },
+  { term: 'kids+activities+classes', loc: 'Bel+Air%2C+MD', category: 'Kids Activities & Classes', city: 'Baltimore' },
+  { term: 'birthday+party+venue+kids', loc: 'Bel+Air%2C+MD', category: 'Birthday Party Venues', city: 'Baltimore' },
+  { term: 'summer+camp+after+school', loc: 'Bel+Air%2C+MD', category: 'Summer Camps & After School', city: 'Baltimore' },
+  { term: 'pediatric+dentist+doctor', loc: 'Bel+Air%2C+MD', category: 'Pediatric Dentists & Doctors', city: 'Baltimore' },
+  { term: 'daycare+preschool', loc: 'Bel+Air%2C+MD', category: 'Daycares & Preschools', city: 'Baltimore' },
+  { term: 'family+friendly+restaurant+kids', loc: 'Bel+Air%2C+MD', category: 'Family-Friendly Restaurants', city: 'Baltimore' },
+  { term: 'kids+haircut+children+clothing', loc: 'Bel+Air%2C+MD', category: 'Kids Haircuts & Clothing', city: 'Baltimore' },
 ];
 
 const MAX_PAGES = 2; // 2 pages per search to be safe

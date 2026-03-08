@@ -12,7 +12,7 @@ const CATEGORIES = [
 const CITIES = [
   { name: 'Plano', slug: 'plano', state: 'TX' },
   { name: 'Frisco', slug: 'frisco', state: 'TX' },
-  { name: 'Baltimore', slug: 'baltimore', state: 'MD', neighborhoods: ['Columbia', 'Towson', 'Catonsville', 'Severna Park'] }
+  { name: 'Baltimore', slug: 'baltimore', state: 'MD', neighborhoods: ['Howard County', 'Baltimore County', 'Anne Arundel County', 'Harford County'] }
 ];
 
 function slugify(text) {

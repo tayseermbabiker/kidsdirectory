@@ -39,7 +39,8 @@ function tagCity(title, source) {
   if (/frisco|fisd/.test(t)) return 'Frisco';
   if (/columbia|howard county|ellicott city/.test(t)) return 'Baltimore';
   if (/towson|baltimore county|lutherville|timonium/.test(t)) return 'Baltimore';
-  if (/catonsville|severna park/.test(t)) return 'Baltimore';
+  if (/catonsville|severna park|anne arundel/.test(t)) return 'Baltimore';
+  if (/bel air|harford county|aberdeen|edgewood/.test(t)) return 'Baltimore';
   if (/maryland/.test(t)) return 'Baltimore';
   if (/dfw|north texas|texas/.test(t)) return 'Plano';
   return '';
@@ -152,6 +153,7 @@ async function scrapeGoogleNewsRSS() {
     'towson+maryland+kids+OR+school+OR+family+OR+camp+when:30d',
     'catonsville+OR+"severna+park"+maryland+kids+OR+school+OR+event+when:30d',
     'howard+county+OR+baltimore+county+maryland+camp+OR+event+OR+opening+when:30d',
+    '"bel+air"+OR+"harford+county"+maryland+kids+OR+school+OR+family+when:30d',
   ];
   const articles = [];
   const seen = new Set();
@@ -177,12 +179,12 @@ async function scrapeGoogleNewsRSS() {
 
         // Must mention a covered city/area
         const t = (title + ' ' + source).toLowerCase();
-        if (!/(plano|frisco|collin county|dfw|north texas|pisd|fisd|columbia|towson|catonsville|severna park|howard county|baltimore county|maryland)/.test(t)) continue;
+        if (!/(plano|frisco|collin county|dfw|north texas|pisd|fisd|columbia|towson|catonsville|severna park|howard county|baltimore county|harford county|bel air|maryland)/.test(t)) continue;
 
         // Skip obituaries, crime, generic national news — not useful for parents
         if (/obituary|murdered|homicide|indicted|sentenced|mugshot/i.test(title)) continue;
         // Skip generic state/national stories not specific to our cities
-        if (!/plano|frisco|pisd|fisd|collin county|columbia|towson|catonsville|severna park|howard county|baltimore county/i.test(title) && /statewide|legislature|governor|abbott|hogan/i.test(title)) continue;
+        if (!/plano|frisco|pisd|fisd|collin county|columbia|towson|catonsville|severna park|howard county|baltimore county|harford county|bel air/i.test(title) && /statewide|legislature|governor|abbott|hogan|moore/i.test(title)) continue;
 
         let dateStr = '';
         if (pubDate) {
