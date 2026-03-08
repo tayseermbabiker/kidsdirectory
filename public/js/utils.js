@@ -10,8 +10,9 @@ const CATEGORIES = [
 ];
 
 const CITIES = [
-  { name: 'Plano', slug: 'plano' },
-  { name: 'Frisco', slug: 'frisco' }
+  { name: 'Plano', slug: 'plano', state: 'TX' },
+  { name: 'Frisco', slug: 'frisco', state: 'TX' },
+  { name: 'Baltimore', slug: 'baltimore', state: 'MD' }
 ];
 
 function slugify(text) {

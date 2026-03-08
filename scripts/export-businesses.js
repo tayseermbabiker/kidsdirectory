@@ -95,7 +95,7 @@ async function exportBusinesses() {
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
-${['plano', 'frisco'].map(city => categories.map(cat => `  <url>
+${['plano', 'frisco', 'baltimore'].map(city => categories.map(cat => `  <url>
     <loc>${SITE_URL}/${city}/${cat}</loc>
     <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
@@ -110,7 +110,7 @@ ${businesses.map(b => `  <url>
 </urlset>`;
 
   fs.writeFileSync(path.join(publicDir, 'sitemap.xml'), sitemap);
-  console.log(`Generated sitemap.xml with ${1 + categories.length * 2 + businesses.length} URLs`);
+  console.log(`Generated sitemap.xml with ${1 + categories.length * 3 + businesses.length} URLs`);
 }
 
 exportBusinesses().catch(console.error);

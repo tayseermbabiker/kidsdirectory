@@ -5,6 +5,7 @@
 const { slugify, sleep, pushToAirtable } = require('./utils');
 
 const SEARCHES = [
+  // === PLANO & FRISCO, TX ===
   { term: 'tutoring+center', loc: 'Plano%2C+TX', category: 'Tutoring & Learning Centers', city: 'Plano' },
   { term: 'tutoring+center', loc: 'Frisco%2C+TX', category: 'Tutoring & Learning Centers', city: 'Frisco' },
   { term: 'kids+activities+classes', loc: 'Plano%2C+TX', category: 'Kids Activities & Classes', city: 'Plano' },
@@ -21,6 +22,24 @@ const SEARCHES = [
   { term: 'family+friendly+restaurant+kids', loc: 'Frisco%2C+TX', category: 'Family-Friendly Restaurants', city: 'Frisco' },
   { term: 'kids+haircut+children+clothing', loc: 'Plano%2C+TX', category: 'Kids Haircuts & Clothing', city: 'Plano' },
   { term: 'kids+haircut+children+clothing', loc: 'Frisco%2C+TX', category: 'Kids Haircuts & Clothing', city: 'Frisco' },
+
+  // === BALTIMORE AREA, MD ===
+  { term: 'tutoring+center', loc: 'Columbia%2C+MD', category: 'Tutoring & Learning Centers', city: 'Baltimore' },
+  { term: 'tutoring+center', loc: 'Towson%2C+MD', category: 'Tutoring & Learning Centers', city: 'Baltimore' },
+  { term: 'kids+activities+classes', loc: 'Columbia%2C+MD', category: 'Kids Activities & Classes', city: 'Baltimore' },
+  { term: 'kids+activities+classes', loc: 'Towson%2C+MD', category: 'Kids Activities & Classes', city: 'Baltimore' },
+  { term: 'birthday+party+venue+kids', loc: 'Columbia%2C+MD', category: 'Birthday Party Venues', city: 'Baltimore' },
+  { term: 'birthday+party+venue+kids', loc: 'Catonsville%2C+MD', category: 'Birthday Party Venues', city: 'Baltimore' },
+  { term: 'summer+camp+after+school', loc: 'Columbia%2C+MD', category: 'Summer Camps & After School', city: 'Baltimore' },
+  { term: 'summer+camp+after+school', loc: 'Severna+Park%2C+MD', category: 'Summer Camps & After School', city: 'Baltimore' },
+  { term: 'pediatric+dentist+doctor', loc: 'Columbia%2C+MD', category: 'Pediatric Dentists & Doctors', city: 'Baltimore' },
+  { term: 'pediatric+dentist+doctor', loc: 'Towson%2C+MD', category: 'Pediatric Dentists & Doctors', city: 'Baltimore' },
+  { term: 'daycare+preschool', loc: 'Columbia%2C+MD', category: 'Daycares & Preschools', city: 'Baltimore' },
+  { term: 'daycare+preschool', loc: 'Catonsville%2C+MD', category: 'Daycares & Preschools', city: 'Baltimore' },
+  { term: 'family+friendly+restaurant+kids', loc: 'Columbia%2C+MD', category: 'Family-Friendly Restaurants', city: 'Baltimore' },
+  { term: 'family+friendly+restaurant+kids', loc: 'Towson%2C+MD', category: 'Family-Friendly Restaurants', city: 'Baltimore' },
+  { term: 'kids+haircut+children+clothing', loc: 'Columbia%2C+MD', category: 'Kids Haircuts & Clothing', city: 'Baltimore' },
+  { term: 'kids+haircut+children+clothing', loc: 'Severna+Park%2C+MD', category: 'Kids Haircuts & Clothing', city: 'Baltimore' },
 ];
 
 const MAX_PAGES = 2; // 2 pages per search to be safe

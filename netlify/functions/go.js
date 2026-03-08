@@ -25,8 +25,13 @@ function escHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+function getState(city) {
+  return (city || '').toLowerCase() === 'baltimore' ? 'MD' : 'TX';
+}
+
 function mapsUrl(address, name, city) {
-  const q = address || `${name}, ${city || 'Plano'}, TX`;
+  const state = getState(city);
+  const q = address || `${name}, ${city || 'Plano'}, ${state}`;
   return `https://www.google.com/maps/search/${encodeURIComponent(q)}`;
 }
 
@@ -144,15 +149,6 @@ exports.handler = async (event) => {
     const biz = businesses.find(b => b.id === id);
     if (!biz) {
       return { statusCode: 404, body: 'Business not found' };
-    }
-
-    // Fire-and-forget click tracking
-    if (AIRTABLE_API_KEY && AIRTABLE_BASE_ID) {
-      fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/Businesses/${id}`, {
-        method: 'PATCH',
-        headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fields: { click_count: (biz.click_count || 0) + 1 } })
-      }).catch(() => {});
     }
 
     // Upgrade Google image to HD
@@ -315,7 +311,7 @@ exports.handler = async (event) => {
         "@type": "PostalAddress",
         "streetAddress": f.address || '',
         "addressLocality": f.city || 'Plano',
-        "addressRegion": "TX"
+        "addressRegion": getState(f.city)
       },
       "telephone": f.phone || '',
       "url": f.website || '',
@@ -328,17 +324,18 @@ exports.handler = async (event) => {
     });
 
     // --- SEO META ---
-    const metaDesc = f.take || f.description || `${f.name} — ${f.category} in ${f.city}, TX. Reviews, hours, and details on KidCompass.`;
+    const state = getState(f.city);
+    const metaDesc = f.take || f.description || `${f.name} — ${f.category} in ${f.city}, ${state}. Reviews, hours, and details on KidCompass.`;
 
     const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${escHtml(f.name)} — ${escHtml(f.category)} in ${escHtml(f.city)}, TX | KidCompass</title>
+  <title>${escHtml(f.name)} — ${escHtml(f.category)} in ${escHtml(f.city)}, ${state} | KidCompass</title>
   <meta name="description" content="${escHtml(metaDesc.substring(0, 160))}">
   <link rel="canonical" href="${SITE_URL}/go/${id}">
-  <meta property="og:title" content="${escHtml(f.name)} — ${escHtml(f.category)} in ${escHtml(f.city)} | KidCompass">
+  <meta property="og:title" content="${escHtml(f.name)} — ${escHtml(f.category)} in ${escHtml(f.city)}, ${state} | KidCompass">
   <meta property="og:description" content="${escHtml(metaDesc.substring(0, 200))}">
   ${f.image_url ? `<meta property="og:image" content="${escHtml(f.image_url)}">` : ''}
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
@@ -497,7 +494,7 @@ exports.handler = async (event) => {
 
     <div class="cat-badge">${escHtml(f.category || '')}</div>
     <h1>${escHtml(f.name)}</h1>
-    <p class="subtitle">${escHtml(f.address || (f.city || 'Plano') + ', TX')}</p>
+    <p class="subtitle">${escHtml(f.address || (f.city || 'Plano') + ', ' + state)}</p>
 
     ${ratingHtml}
 
@@ -535,7 +532,7 @@ exports.handler = async (event) => {
     <button onclick="sharePage()" style="background:none;border:none;color:#6A6A6A;font-size:0.75rem;cursor:pointer;text-decoration:underline;padding:0;">Share this page</button>
   </div>
 
-  <div class="footer">KidCompass — Plano & Frisco, TX</div>
+  <div class="footer">KidCompass — Plano &amp; Frisco, TX | Columbia &amp; Towson, MD</div>
 
   <script>
     const BIZ_ID = '${id}';

@@ -125,12 +125,16 @@ async function scrapeFriscoISD(page) {
   }
 }
 
-// --- SCRAPER: Google News RSS (HTTP — covers Plano + Frisco from multiple sources) ---
+// --- SCRAPER: Google News RSS (HTTP — covers all cities from multiple sources) ---
 async function scrapeGoogleNewsRSS() {
   console.log('\n--- Google News RSS ---');
   const queries = [
+    // Plano/Frisco TX
     'plano+OR+frisco+texas+kids+OR+school+OR+family+OR+park+when:30d',
     'plano+OR+frisco+texas+camp+OR+event+OR+registration+OR+opening+when:30d',
+    // Baltimore area MD
+    'columbia+OR+towson+OR+catonsville+maryland+kids+OR+school+OR+family+when:30d',
+    'howard+county+OR+baltimore+county+maryland+camp+OR+event+OR+opening+when:30d',
   ];
   const articles = [];
   const seen = new Set();
@@ -154,9 +158,9 @@ async function scrapeGoogleNewsRSS() {
         if (!title || title.length < 15 || !link || seen.has(title)) continue;
         seen.add(title);
 
-        // Must mention Plano, Frisco, or DFW-area terms
+        // Must mention a covered city/area
         const t = (title + ' ' + source).toLowerCase();
-        if (!/(plano|frisco|collin county|dfw|north texas|pisd|fisd)/.test(t)) continue;
+        if (!/(plano|frisco|collin county|dfw|north texas|pisd|fisd|columbia|towson|catonsville|severna park|howard county|baltimore county|maryland)/.test(t)) continue;
 
         // Skip obituaries, crime, generic national news — not useful for parents
         if (/obituary|murdered|homicide|indicted|sentenced|mugshot/i.test(title)) continue;

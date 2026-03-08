@@ -2,6 +2,7 @@ require('dotenv').config();
 const { slugify, sleep, pushToAirtable, launchBrowser } = require('./utils');
 
 const SEARCHES = [
+  // === PLANO & FRISCO, TX ===
   // Tutoring & Learning Centers
   { query: 'tutoring center Plano TX', category: 'Tutoring & Learning Centers' },
   { query: 'Kumon Mathnasium Plano Frisco', category: 'Tutoring & Learning Centers' },
@@ -29,16 +30,63 @@ const SEARCHES = [
   // Kids Haircuts & Clothing
   { query: 'kids haircut salon Plano TX', category: 'Kids Haircuts & Clothing' },
   { query: 'children clothing store Frisco TX', category: 'Kids Haircuts & Clothing' },
+
+  // === BALTIMORE AREA, MD ===
+  // Tutoring & Learning Centers
+  { query: 'tutoring center Columbia MD', category: 'Tutoring & Learning Centers' },
+  { query: 'Kumon Mathnasium Towson MD', category: 'Tutoring & Learning Centers' },
+  { query: 'learning center kids Catonsville MD', category: 'Tutoring & Learning Centers' },
+  // Kids Activities & Classes
+  { query: 'kids dance class Columbia MD', category: 'Kids Activities & Classes' },
+  { query: 'kids swim lessons Towson MD', category: 'Kids Activities & Classes' },
+  { query: 'kids martial arts gymnastics Severna Park MD', category: 'Kids Activities & Classes' },
+  { query: 'music lessons for kids Columbia MD', category: 'Kids Activities & Classes' },
+  // Birthday Party Venues
+  { query: 'birthday party venue kids Columbia MD', category: 'Birthday Party Venues' },
+  { query: 'kids party place Towson Catonsville MD', category: 'Birthday Party Venues' },
+  // Summer Camps & After School
+  { query: 'summer camp kids Columbia Howard County MD', category: 'Summer Camps & After School' },
+  { query: 'after school program Towson MD', category: 'Summer Camps & After School' },
+  // Pediatric Dentists & Doctors
+  { query: 'pediatric dentist Columbia MD', category: 'Pediatric Dentists & Doctors' },
+  { query: 'pediatrician Towson Catonsville MD', category: 'Pediatric Dentists & Doctors' },
+  // Daycares & Preschools
+  { query: 'daycare preschool Columbia MD', category: 'Daycares & Preschools' },
+  { query: 'preschool Severna Park Catonsville MD', category: 'Daycares & Preschools' },
+  // Family-Friendly Restaurants
+  { query: 'family friendly restaurant kids Columbia MD', category: 'Family-Friendly Restaurants' },
+  { query: 'kid friendly restaurant Towson MD', category: 'Family-Friendly Restaurants' },
+  // Kids Haircuts & Clothing
+  { query: 'kids haircut salon Columbia MD', category: 'Kids Haircuts & Clothing' },
+  { query: 'children clothing store Towson MD', category: 'Kids Haircuts & Clothing' },
 ];
 
-function extractCity(address) {
-  if (!address) return 'Plano';
-  const lower = address.toLowerCase();
-  if (lower.includes('frisco')) return 'Frisco';
-  if (lower.includes('plano')) return 'Plano';
-  if (lower.includes('allen')) return 'Plano';
-  if (lower.includes('mckinney')) return 'Frisco';
+function extractCity(address, query) {
+  const lower = (address || '').toLowerCase();
+  const q = (query || '').toLowerCase();
+  // Maryland → all grouped as "Baltimore"
+  if (lower.includes('columbia') || lower.includes('ellicott city') || lower.includes('towson') ||
+      lower.includes('lutherville') || lower.includes('timonium') || lower.includes('catonsville') ||
+      lower.includes('severna park') || lower.includes('howard county') || lower.includes('baltimore')) {
+    return 'Baltimore';
+  }
+  if (q.includes('columbia') || q.includes('towson') || q.includes('catonsville') || q.includes('severna park')) {
+    return 'Baltimore';
+  }
+  // Texas cities
+  if (lower.includes('frisco') || lower.includes('mckinney')) return 'Frisco';
+  if (lower.includes('plano') || lower.includes('allen')) return 'Plano';
   return 'Plano';
+}
+
+function extractNeighborhood(address, query) {
+  const lower = (address || '').toLowerCase();
+  const q = (query || '').toLowerCase();
+  if (lower.includes('columbia') || lower.includes('ellicott city') || q.includes('columbia')) return 'Columbia';
+  if (lower.includes('towson') || lower.includes('lutherville') || lower.includes('timonium') || q.includes('towson')) return 'Towson';
+  if (lower.includes('catonsville') || q.includes('catonsville')) return 'Catonsville';
+  if (lower.includes('severna park') || q.includes('severna park')) return 'Severna Park';
+  return '';
 }
 
 async function scrapeGoogleMaps(context, query, category) {
@@ -254,14 +302,15 @@ async function scrapeGoogleMaps(context, query, category) {
           description = basicInfo.bizType + (description ? '. ' + description : '');
         }
 
-        const city = extractCity(basicInfo.address || biz.address);
+        const city = extractCity(basicInfo.address || biz.address, query);
+        const neighborhood = extractNeighborhood(basicInfo.address || biz.address, query);
 
         results.push({
           name: biz.name,
           slug: slugify(biz.name),
           category,
           city,
-          neighborhood: '',
+          neighborhood,
           address: basicInfo.address || biz.address,
           phone: basicInfo.phone,
           website: basicInfo.website,

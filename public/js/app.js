@@ -68,7 +68,8 @@ function route() {
 
   if (path === '/' || path === '') { renderHome(app); return; }
 
-  const cityMatch = path.match(/^\/(plano|frisco)\/?$/);
+  const citySlugs = CITIES.map(c => c.slug).join('|');
+  const cityMatch = path.match(new RegExp(`^\\/(${citySlugs})\\/?$`));
   if (cityMatch) {
     currentCity = cityMatch[1];
     currentCategory = null;
@@ -76,7 +77,7 @@ function route() {
     return;
   }
 
-  const catMatch = path.match(/^\/(plano|frisco|all)\/([a-z0-9-]+)\/?$/);
+  const catMatch = path.match(new RegExp(`^\\/(${citySlugs}|all)\\/([a-z0-9-]+)\\/?$`));
   if (catMatch) {
     currentCity = catMatch[1];
     currentCategory = catMatch[2];
@@ -111,7 +112,7 @@ function renderHome(app) {
       <div class="hero-bg" style="background-image:url('${HERO_IMG}')"></div>
       <div class="hero-content">
         <h1>Discover the best places for your <em>little ones</em></h1>
-        <p>Trusted by parents in Plano & Frisco, TX</p>
+        <p>Trusted by parents in Plano, Frisco, and Baltimore</p>
         <div class="search-box">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
@@ -124,7 +125,7 @@ function renderHome(app) {
     <div class="stats-bar">
       <div class="stat"><div class="stat-num">${totalCount}+</div><div class="stat-label">Verified Listings</div></div>
       <div class="stat"><div class="stat-num">${catCount}</div><div class="stat-label">Categories</div></div>
-      <div class="stat"><div class="stat-num">2</div><div class="stat-label">Cities</div></div>
+      <div class="stat"><div class="stat-num">${CITIES.length}</div><div class="stat-label">Cities</div></div>
     </div>
 
     <div class="section">
@@ -141,7 +142,7 @@ function renderHome(app) {
             <div class="cat-card-icon">${icon}</div>
             <div class="cat-card-text">
               <h3>${c.name}</h3>
-              <p>${count} listings in Plano & Frisco</p>
+              <p>${count} listings</p>
             </div>
           </a>`;
         }).join('')}
@@ -189,8 +190,7 @@ function renderHome(app) {
         <form class="subscribe-form" id="subscribe-form">
           <input type="email" name="email" placeholder="Your email address" required>
           <div class="subscribe-cities">
-            <label class="city-check"><input type="checkbox" name="city" value="Plano" checked> Plano</label>
-            <label class="city-check"><input type="checkbox" name="city" value="Frisco" checked> Frisco</label>
+            ${CITIES.map(c => `<label class="city-check"><input type="checkbox" name="city" value="${c.name}" checked> ${c.name}</label>`).join('\n            ')}
           </div>
           <button type="submit">Count Me In</button>
         </form>
@@ -223,13 +223,14 @@ function renderHome(app) {
 function renderCityPage(app, citySlug) {
   const city = cityFromSlug(citySlug);
   const cityName = city ? city.name : citySlug;
-  const businesses = allBusinesses.filter(b => b.city.toLowerCase() === citySlug);
+  const stateAbbr = city ? city.state : 'TX';
+  const businesses = allBusinesses.filter(b => b.city.toLowerCase() === citySlug || slugify(b.city) === citySlug);
 
   app.innerHTML = `
     <div class="page-header">
       <div class="page-header-inner">
         <div class="breadcrumb"><a href="/">Home</a> / ${cityName}</div>
-        <h1>Kids Services in ${cityName}, TX</h1>
+        <h1>Kids Services in ${cityName}, ${stateAbbr}</h1>
         <p>${businesses.length} listings across all categories</p>
       </div>
     </div>
@@ -267,7 +268,7 @@ function renderCategoryPage(app, citySlug, catSlug) {
   const catName = cat ? cat.name : catSlug;
   const isAllCities = citySlug === 'all';
   const city = isAllCities ? null : cityFromSlug(citySlug);
-  const cityName = isAllCities ? 'Plano & Frisco' : (city ? city.name : citySlug);
+  const cityName = isAllCities ? 'All Cities' : (city ? city.name : citySlug);
   const breadcrumbCity = isAllCities ? 'All Cities' : cityName;
 
   const allInCategory = allBusinesses.filter(b => b.category === catName);
@@ -326,7 +327,7 @@ function renderCategoryPage(app, citySlug, catSlug) {
     if (sortVal === 'name') filtered.sort((a, b) => a.name.localeCompare(b.name));
 
     const countEl = document.getElementById('results-count');
-    if (countEl) countEl.textContent = `${filtered.length} listings in ${cityVal === 'all' ? 'Plano & Frisco' : (cityFromSlug(cityVal) || {}).name || cityVal}`;
+    if (countEl) countEl.textContent = `${filtered.length} listings in ${cityVal === 'all' ? 'All Cities' : (cityFromSlug(cityVal) || {}).name || cityVal}`;
 
     document.getElementById('results-grid').innerHTML = filtered.length ?
       filtered.map(renderBizCard).join('') :
@@ -399,7 +400,7 @@ function renderBizCard(biz) {
         ${desc ? `<p class="biz-card-desc">${escHtml(desc)}</p>` : ''}
         <div class="biz-card-meta">
           ${biz.rating ? `<div class="biz-card-rating">${renderStars(biz.rating)}<span class="biz-rating-num">${biz.rating}</span>${biz.review_count ? `<span class="biz-review-ct">(${biz.review_count.toLocaleString()})</span>` : ''}</div>` : ''}
-          <span class="biz-card-city">${escHtml(biz.city)}, TX</span>
+          <span class="biz-card-city">${escHtml(biz.city)}, ${(cityFromSlug(slugify(biz.city)) || {}).state || 'TX'}</span>
           ${biz.vote_count ? `<span class="biz-card-votes">${biz.vote_count} rec.</span>` : ''}
         </div>
       </div>
@@ -602,7 +603,7 @@ function renderTermsPage(app) {
     <p>By using KidCompass, you agree to these terms.</p>
 
     <h2>What KidCompass Is</h2>
-    <p>KidCompass is a free directory of kids services in Plano and Frisco, TX. We curate listings from public sources (Google Maps, Yelp) and add editorial content to help parents make informed decisions.</p>
+    <p>KidCompass is a free directory of kids services. We curate listings from public sources (Google Maps, Yelp) and add editorial content to help parents make informed decisions.</p>
 
     <h2>No Endorsement</h2>
     <p>Listings on KidCompass are for informational purposes only. We do not endorse, guarantee, or verify any business listed. Always do your own research, visit in person, and verify credentials before enrolling your child.</p>
@@ -627,7 +628,7 @@ function renderTermsPage(app) {
 function renderAboutPage(app) {
   renderLegalPage(app, 'About KidCompass', `
     <h2>For Parents, By Parents</h2>
-    <p>KidCompass helps parents in Plano and Frisco, TX find the best services for their kids — from tutoring centers and swim classes to birthday party venues and pediatricians.</p>
+    <p>KidCompass helps parents find the best services for their kids — from tutoring centers and swim classes to birthday party venues and pediatricians.</p>
 
     <h2>What Makes Us Different</h2>
     <ul>
@@ -638,7 +639,7 @@ function renderAboutPage(app) {
     </ul>
 
     <h2>Our Cities</h2>
-    <p>We currently cover <strong>Plano</strong> and <strong>Frisco</strong>, Texas — two of the best cities in DFW for raising kids. More cities coming soon.</p>
+    <p>We currently cover <strong>Plano</strong> and <strong>Frisco</strong> in Texas, plus the <strong>Baltimore</strong> metro area in Maryland (Columbia, Towson, Catonsville, Severna Park).</p>
 
     <h2>Get in Touch</h2>
     <p>Have a suggestion, correction, or just want to say hi? Email us at <a href="mailto:hello@kidcompass.com">hello@kidcompass.com</a></p>
