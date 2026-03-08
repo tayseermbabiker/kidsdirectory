@@ -515,27 +515,19 @@ function getNewsCatIcon(cat) {
   return map[cat] || 'news';
 }
 
-// Priority-weight news: Education & Sports first, then Openings, Health, Events, Local Impact
+// Carousel shows Education, Health & Safety, Community only
+// New Openings, Events, Sports & Activities go to the weekly newsletter
 function prioritizeNews(news, max) {
-  const CAT_WEIGHT = {
-    'Education': 6,
-    'Sports & Activities': 5,
-    'New Openings': 4,
-    'Health & Safety': 3,
-    'Events': 2,
-    'Local Impact': 1,
-    'Community': 1
-  };
+  const CAROUSEL_CATS = ['Education', 'Health & Safety', 'Community'];
+  const filtered = news.filter(n => CAROUSEL_CATS.includes(n.category));
   const now = new Date();
-  const scored = news.map(n => {
-    const catScore = CAT_WEIGHT[n.category] || 1;
-    // Recency: 0-2 days = 3, 3-4 days = 2, 5-7 days = 1, older = 0
+  const scored = filtered.map(n => {
     let recency = 0;
     if (n.published_at) {
       const days = Math.floor((now - new Date(n.published_at + 'T00:00:00')) / 86400000);
       recency = days <= 2 ? 3 : days <= 4 ? 2 : days <= 7 ? 1 : 0;
     }
-    return { ...n, score: catScore * 2 + recency };
+    return { ...n, score: recency };
   });
   scored.sort((a, b) => b.score - a.score);
   return scored.slice(0, max);
