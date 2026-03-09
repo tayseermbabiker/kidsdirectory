@@ -519,7 +519,22 @@ function prioritizeNews(news, max) {
     return { ...n, score: recency };
   });
   scored.sort((a, b) => b.score - a.score);
-  return scored.slice(0, max);
+  // Round-robin across cities so carousel mixes all locations
+  const byCity = {};
+  scored.forEach(n => {
+    const c = n.city || 'Other';
+    if (!byCity[c]) byCity[c] = [];
+    byCity[c].push(n);
+  });
+  const cityQueues = Object.values(byCity);
+  const result = [];
+  let i = 0;
+  while (result.length < max && cityQueues.some(q => q.length > 0)) {
+    const q = cityQueues[i % cityQueues.length];
+    if (q.length) result.push(q.shift());
+    i++;
+  }
+  return result;
 }
 
 function formatNewsDate(dateStr) {
