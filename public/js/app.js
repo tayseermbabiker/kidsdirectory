@@ -4,8 +4,8 @@ let currentCity = null;
 let currentCategory = null;
 let searchQuery = '';
 
-// Unsplash hero image — happy diverse kids playing
-const HERO_IMG = 'https://images.unsplash.com/photo-1587654780293-f32e19c5e93a?w=1400&q=80&auto=format';
+// Unsplash hero image — dad with two young kids outdoors
+const HERO_IMG = 'https://images.unsplash.com/photo-1609220136736-443140cffec6?w=1400&q=80&auto=format&fit=crop';
 
 // Category card colors
 const CAT_COLORS = ['teal', 'coral', 'golden', 'purple', 'sky', 'teal', 'coral', 'golden'];
