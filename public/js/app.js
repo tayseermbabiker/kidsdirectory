@@ -86,6 +86,7 @@ function route() {
   }
 
   if (path === '/saved') { renderSavedPage(app); return; }
+  if (path === '/faq') { renderFaqPage(app); return; }
   if (path === '/privacy') { renderPrivacyPage(app); return; }
   if (path === '/terms') { renderTermsPage(app); return; }
   if (path === '/about') { renderAboutPage(app); return; }
@@ -226,6 +227,7 @@ function renderCityPage(app, citySlug) {
   const stateAbbr = city ? city.state : 'TX';
   const businesses = allBusinesses.filter(b => b.city.toLowerCase() === citySlug || slugify(b.city) === citySlug);
   const neighborhoods = city && city.neighborhoods ? city.neighborhoods : null;
+  document.title = `Best Kids Services in ${cityName}, ${stateAbbr} — Tutoring, Activities, Camps & More | KidCompass`;
 
   if (neighborhoods) {
     // Grouped layout for cities with neighborhoods (Baltimore)
@@ -307,6 +309,8 @@ function renderCategoryPage(app, citySlug, catSlug) {
   const initialCity = isAllCities ? 'all' : citySlug;
 
   const heroImg = CAT_HERO_IMGS[catName] || '';
+  const seoTitle = getSeoTitle(catName, cityName, city);
+  document.title = `${seoTitle} | KidCompass`;
 
   app.innerHTML = `
     ${heroImg ? `
@@ -314,14 +318,14 @@ function renderCategoryPage(app, citySlug, catSlug) {
       <div class="cat-hero-bg" style="background-image:url('${heroImg}')"></div>
       <div class="cat-hero-content">
         <div class="breadcrumb breadcrumb--light"><a href="/">Home</a><span>/</span>${breadcrumbCity}<span>/</span>${catName}</div>
-        <h1>${catName}</h1>
+        <h1>${seoTitle}</h1>
         <p id="results-count">${allInCategory.length} listings in ${cityName}</p>
       </div>
     </div>` : `
     <div class="page-header">
       <div class="page-header-inner">
         <div class="breadcrumb"><a href="/">Home</a> / ${breadcrumbCity} / ${catName}</div>
-        <h1>${catName}</h1>
+        <h1>${seoTitle}</h1>
         <p id="results-count">${allInCategory.length} listings in ${cityName}</p>
       </div>
     </div>`}
@@ -596,6 +600,124 @@ document.addEventListener('click', (e) => {
   route();
   window.scrollTo(0, 0);
 });
+
+// === SEO HELPERS ===
+
+function getSeoTitle(catName, cityName, city) {
+  const stateAbbr = city ? city.state : '';
+  const loc = cityName === 'All Cities' ? 'Plano, Frisco & Baltimore' : `${cityName}${stateAbbr ? ', ' + stateAbbr : ''}`;
+  const map = {
+    'Tutoring & Learning Centers': `Best Tutoring Centers for Kids in ${loc}`,
+    'Kids Activities & Classes': `Kids Activities & Classes in ${loc}`,
+    'Birthday Party Venues': `Best Birthday Party Venues for Kids in ${loc}`,
+    'Summer Camps & After School': `Summer Camps & After School Programs in ${loc}`,
+    'Pediatric Dentists & Doctors': `Best Pediatric Dentists & Doctors in ${loc}`,
+    'Daycares & Preschools': `Best Daycares & Preschools in ${loc}`,
+    'Family-Friendly Restaurants': `Family-Friendly Restaurants in ${loc}`,
+    'Kids Haircuts & Clothing': `Kids Haircuts & Clothing Stores in ${loc}`
+  };
+  return map[catName] || `${catName} in ${loc}`;
+}
+
+// === FAQ PAGE ===
+
+const FAQ_DATA = {
+  'Tutoring & Learning Centers': [
+    { q: 'What are the best tutoring centers for kids in Plano TX?', a: 'Top-rated tutoring centers in Plano include Kumon, Mathnasium, Sylvan Learning, and C2 Education. Browse our full list with ratings, reviews, and hours to find the best fit for your child.' },
+    { q: 'Kumon vs Mathnasium — which is better for my child?', a: 'Kumon focuses on self-paced worksheets building foundational math and reading skills. Mathnasium uses customized learning plans with in-center instruction. Kumon is better for building discipline; Mathnasium is better for kids who need more hands-on help.' },
+    { q: 'How much does tutoring cost in Columbia MD?', a: 'Tutoring costs in Howard County typically range from $150-$300/month for centers like Kumon, or $40-$80/hour for private tutors. Check individual listings for current pricing.' },
+    { q: 'What age should kids start tutoring?', a: 'Most learning centers accept kids as young as 3-4 for early reading and math programs. The best time to start depends on your child — if they are struggling or need enrichment, earlier is better.' },
+    { q: 'Are there tutoring centers in Towson MD for elementary kids?', a: 'Yes! Towson and Baltimore County have several highly-rated tutoring centers including Kumon, Huntington Learning Center, and local options. See our Baltimore County listings for full details.' }
+  ],
+  'Kids Activities & Classes': [
+    { q: 'What are the best swim lessons for toddlers in Plano TX?', a: 'Popular swim schools in Plano include Emler Swim School, Goldfish Swim School, and SafeSplash. Most accept kids from 4 months old. Look for small class sizes and warm water pools.' },
+    { q: 'What age should kids start martial arts?', a: 'Most martial arts studios offer classes for kids as young as 3-4 years old. Starting early helps with discipline, coordination, and confidence. Many studios offer a free trial class.' },
+    { q: 'Where can my kids take dance classes in Annapolis MD?', a: 'Anne Arundel County has several dance studios offering ballet, jazz, hip-hop, and tap for kids. Check our Anne Arundel County listings for studios with ratings and parent reviews.' },
+    { q: 'What indoor activities are there for kids in Howard County MD?', a: 'Howard County offers indoor playgrounds, trampoline parks (Sky Zone Columbia), gymnastics centers, art studios, and swimming. Great for rainy days or hot summers.' },
+    { q: 'Are there kids coding or robotics classes near Frisco TX?', a: 'Yes! Frisco has several STEM-focused programs including Code Ninjas, Snapology, and various robotics clubs. These are great for kids interested in technology and engineering.' }
+  ],
+  'Birthday Party Venues': [
+    { q: 'What are the best birthday party places for kids in Plano TX?', a: 'Popular party venues in Plano include trampoline parks, bowling alleys, pottery studios, and indoor play centers. Many offer all-inclusive party packages starting around $200-$400.' },
+    { q: 'How much does a kids birthday party venue cost?', a: 'Party packages typically range from $200-$500 depending on the venue, number of kids, and add-ons. Trampoline parks and play centers are usually the most affordable options.' },
+    { q: 'Trampoline park vs bowling for a kids party — which is better?', a: 'Trampoline parks are better for high-energy kids ages 5-12 who want to jump and play. Bowling is better for mixed-age groups and a more relaxed party. Both usually include a party room.' },
+    { q: 'Where can I host a toddler birthday party in Baltimore MD?', a: 'Great toddler party options in the Baltimore area include indoor play spaces, kids gyms (My Gym, The Little Gym), and pottery painting studios. These are safer for little ones than trampoline parks.' }
+  ],
+  'Summer Camps & After School': [
+    { q: 'What are the best summer camps in Howard County MD?', a: 'Howard County offers excellent summer camps through Recreation & Parks, the YMCA, and private providers. Options include STEM camps, sports camps, art camps, and nature camps in Columbia and Ellicott City.' },
+    { q: 'How much does summer camp cost in Plano TX?', a: 'Summer camp costs in Plano vary: city-run camps start around $150-$250/week, while specialty camps (STEM, sports, arts) can run $300-$500/week. Many offer early bird discounts.' },
+    { q: 'What age do kids start summer camp?', a: 'Most day camps accept kids starting at age 5-6 (entering kindergarten). Some programs for younger kids (3-4) exist but are usually shorter days. Overnight camps typically start at age 7-8.' },
+    { q: 'Are there after-school programs in Severna Park MD?', a: 'Yes! Anne Arundel County has SACC (School-Age Child Care) programs, YMCA after-school care, and various enrichment programs. Check our listings for options with ratings and reviews.' }
+  ],
+  'Pediatric Dentists & Doctors': [
+    { q: 'When should my child first see a dentist?', a: 'The American Academy of Pediatric Dentistry recommends a first dental visit by age 1 or within 6 months of the first tooth. Early visits help prevent cavities and build comfort with dental care.' },
+    { q: 'Pediatric dentist vs family dentist — which is better for kids?', a: 'Pediatric dentists complete 2-3 extra years of training specifically for children. Their offices are kid-friendly with smaller equipment. For anxious kids or those under 5, a pediatric dentist is usually the better choice.' },
+    { q: 'What are the best pediatric dentists in Plano TX?', a: 'Plano has several top-rated pediatric dentists. Look for board-certified specialists with high Google ratings and parent reviews. Check our full list with ratings and contact info.' },
+    { q: 'How do I choose a pediatrician in Baltimore MD?', a: 'Look for board-certified pediatricians with convenient hours, a location near your home, and good parent reviews. Many offer meet-and-greet visits before you commit.' }
+  ],
+  'Daycares & Preschools': [
+    { q: 'How do I choose the right daycare for my toddler?', a: 'Key factors: staff-to-child ratio (ideally 1:3 for infants, 1:4 for toddlers), licensing and accreditation, cleanliness, curriculum approach, location, and hours. Always visit in person and trust your instincts.' },
+    { q: 'Montessori vs traditional preschool — what is the difference?', a: 'Montessori emphasizes self-directed learning, mixed-age classrooms, and hands-on materials. Traditional preschool is more teacher-led with structured activities and same-age groups. Neither is universally better — it depends on your child.' },
+    { q: 'How much does daycare cost per week in Plano TX?', a: 'Full-time daycare in Plano typically costs $200-$350/week for toddlers and $175-$300/week for preschool-age kids. Costs vary by center quality and program type.' },
+    { q: 'What are the best preschools in Columbia MD?', a: 'Howard County has excellent preschool options including Montessori schools, Goddard School, Primrose School, and local programs. See our listings for ratings, reviews, and enrollment info.' },
+    { q: 'Are there affordable daycares in Baltimore County MD?', a: 'Baltimore County offers a range of daycare options from home-based providers to larger centers. Maryland also offers child care subsidies for qualifying families through the Child Care Scholarship program.' }
+  ],
+  'Family-Friendly Restaurants': [
+    { q: 'What are the best kid-friendly restaurants in Plano TX?', a: 'Plano has many family-friendly options ranging from casual chains to local favorites. Look for restaurants with kids menus, high chairs, outdoor seating, and play areas.' },
+    { q: 'Where can I find family brunch spots in Towson MD?', a: 'Towson and Baltimore County have several great brunch spots including Miss Shirley\'s Cafe, Cunningham\'s, and local diners. Check our listings for hours and parent reviews.' },
+    { q: 'Are there restaurants with play areas for kids near me?', a: 'Some restaurants in our listings feature indoor or outdoor play areas. Filter by your city and check individual listings for amenities and parent tips.' }
+  ],
+  'Kids Haircuts & Clothing': [
+    { q: 'Where should I take my toddler for their first haircut?', a: 'Kids hair salons are designed for first haircuts — they have fun chairs, cartoons, and patient stylists. They are much better than regular barbershops for nervous toddlers. Check our listings for kids salons near you.' },
+    { q: 'Kids salon vs regular barbershop — which is better?', a: 'Kids salons specialize in children with entertainment, kid-sized chairs, and experience with wiggly toddlers. Regular barbershops are fine for older kids (6+) who can sit still. For first haircuts, always go kids salon.' },
+    { q: 'Where can I buy children\'s clothing in Frisco TX?', a: 'Frisco has both chain stores and local boutiques for kids clothing. Check our listings for specialty children\'s clothing stores with parent ratings.' }
+  ]
+};
+
+function renderFaqPage(app) {
+  document.title = 'FAQ — Common Questions About Kids Services | KidCompass';
+
+  const faqSchema = [];
+  Object.values(FAQ_DATA).forEach(faqs => {
+    faqs.forEach(f => {
+      faqSchema.push({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } });
+    });
+  });
+
+  // Inject FAQ JSON-LD schema
+  let schemaEl = document.getElementById('faq-schema');
+  if (!schemaEl) {
+    schemaEl = document.createElement('script');
+    schemaEl.id = 'faq-schema';
+    schemaEl.type = 'application/ld+json';
+    document.head.appendChild(schemaEl);
+  }
+  schemaEl.textContent = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqSchema
+  });
+
+  app.innerHTML = `
+    <div class="page-header">
+      <div class="page-header-inner">
+        <div class="breadcrumb"><a href="/">Home</a> / FAQ</div>
+        <h1>Frequently Asked Questions</h1>
+        <p>Answers to common questions parents ask about kids services in Plano, Frisco, and Baltimore.</p>
+      </div>
+    </div>
+    <div class="section faq-section">
+      ${Object.entries(FAQ_DATA).map(([category, faqs]) => `
+      <div class="faq-category">
+        <h2>${category}</h2>
+        ${faqs.map(f => `
+        <details class="faq-item">
+          <summary class="faq-question">${escHtml(f.q)}</summary>
+          <div class="faq-answer"><p>${escHtml(f.a)}</p></div>
+        </details>`).join('')}
+      </div>`).join('')}
+    </div>
+  `;
+}
 
 // === LEGAL PAGES ===
 
