@@ -30,13 +30,13 @@ jobs:
       - name: Scrape news
         env:
           AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}
-          AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
+          AIRTABLE_CONTENT_BASE_ID: ${{ secrets.AIRTABLE_CONTENT_BASE_ID }}
         run: node scrapers/news-scraper.js
 
       - name: Export news to JSON
         env:
           AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}
-          AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
+          AIRTABLE_CONTENT_BASE_ID: ${{ secrets.AIRTABLE_CONTENT_BASE_ID }}
         run: node scripts/export-news.js
 
       - name: Export businesses to JSON

@@ -2,7 +2,7 @@ const fetch = require('node-fetch');
 const crypto = require('crypto');
 
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
-const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
+const AIRTABLE_BASE_ID = process.env.AIRTABLE_CONTENT_BASE_ID;
 const TABLE_NAME = 'Subscribers';
 
 exports.handler = async (event) => {

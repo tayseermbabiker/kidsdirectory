@@ -3,7 +3,7 @@ const fetch = require('node-fetch');
 const { launchBrowser, sleep } = require('./utils');
 
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
-const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
+const AIRTABLE_BASE_ID = process.env.AIRTABLE_CONTENT_BASE_ID;
 const NEWS_TABLE = 'News';
 
 // Keywords that indicate relevance to parents

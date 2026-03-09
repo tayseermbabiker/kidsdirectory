@@ -2,7 +2,7 @@ const fetch = require('node-fetch');
 const { Resend } = require('resend');
 
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
-const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
+const AIRTABLE_BASE_ID = process.env.AIRTABLE_CONTENT_BASE_ID;
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const ALERTS_SECRET = process.env.ALERTS_SECRET;
 const SITE_URL = process.env.URL || 'https://kidsdirectory.netlify.app';
