@@ -152,7 +152,7 @@ function renderHome(app) {
       </div>
       <div class="news-slider-wrapper">
         <div class="news-slider-track" id="news-track">
-          ${[...prioritizeNews(allNews, 10), ...prioritizeNews(allNews, 10)].map(n => {
+          ${[...prioritizeNews(allNews, 6), ...prioritizeNews(allNews, 6)].map(n => {
             const date = n.published_at ? formatNewsDate(n.published_at) : '';
             return `
           <a href="${escHtml(n.url)}" target="_blank" rel="noopener" class="news-card">
