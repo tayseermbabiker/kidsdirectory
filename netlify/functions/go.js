@@ -2,7 +2,7 @@ const fetch = require('node-fetch');
 
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
-const SITE_URL = process.env.URL || 'https://kidsdirectory.netlify.app';
+const SITE_URL = process.env.URL || 'https://kiddoscompass.com';
 
 let cachedBusinesses = null;
 let cacheTime = 0;
@@ -180,7 +180,7 @@ exports.handler = async (event) => {
     // --- KIDCOMPASS TAKE ---
     const takeHtml = f.take ? `
       <div class="take-block">
-        <div class="take-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3BA7A0" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>KidCompass Take</div>
+        <div class="take-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3BA7A0" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>KiddosCompass Take</div>
         <p>${escHtml(f.take)}</p>
       </div>` : '';
 
@@ -325,17 +325,17 @@ exports.handler = async (event) => {
 
     // --- SEO META ---
     const state = getState(f.city);
-    const metaDesc = f.take || f.description || `${f.name} — ${f.category} in ${f.city}, ${state}. Reviews, hours, and details on KidCompass.`;
+    const metaDesc = f.take || f.description || `${f.name} — ${f.category} in ${f.city}, ${state}. Reviews, hours, and details on KiddosCompass.`;
 
     const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${escHtml(f.name)} — ${escHtml(f.category)} in ${escHtml(f.city)}, ${state} | KidCompass</title>
+  <title>${escHtml(f.name)} — ${escHtml(f.category)} in ${escHtml(f.city)}, ${state} | KiddosCompass</title>
   <meta name="description" content="${escHtml(metaDesc.substring(0, 160))}">
   <link rel="canonical" href="${SITE_URL}/go/${id}">
-  <meta property="og:title" content="${escHtml(f.name)} — ${escHtml(f.category)} in ${escHtml(f.city)}, ${state} | KidCompass">
+  <meta property="og:title" content="${escHtml(f.name)} — ${escHtml(f.category)} in ${escHtml(f.city)}, ${state} | KiddosCompass">
   <meta property="og:description" content="${escHtml(metaDesc.substring(0, 200))}">
   ${f.image_url ? `<meta property="og:image" content="${escHtml(f.image_url)}">` : ''}
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
@@ -472,7 +472,7 @@ exports.handler = async (event) => {
 <body>
   <nav class="nav">
     <div class="nav-inner">
-      <a href="/" class="logo">KidCompass</a>
+      <a href="/" class="logo">KiddosCompass</a>
       <div class="nav-actions">
         <a href="/" class="nav-link">Browse</a>
         <button class="save-btn" id="saveBtn" onclick="toggleSave()">
@@ -533,11 +533,11 @@ exports.handler = async (event) => {
 
   <div class="page-meta">
     ${f.scraped_at ? `<span>Last verified: ${new Date(f.scraped_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>` : ''}
-    <a href="mailto:hello@kidcompass.com?subject=Edit suggestion for ${encodeURIComponent(f.name)}&body=Business: ${encodeURIComponent(f.name)}%0AWhat needs updating:%0A" class="meta-link">Suggest an edit</a>
+    <a href="mailto:hello@kiddoscompass.com?subject=Edit suggestion for ${encodeURIComponent(f.name)}&body=Business: ${encodeURIComponent(f.name)}%0AWhat needs updating:%0A" class="meta-link">Suggest an edit</a>
     <button onclick="sharePage()" style="background:none;border:none;color:#6A6A6A;font-size:0.75rem;cursor:pointer;text-decoration:underline;padding:0;">Share this page</button>
   </div>
 
-  <div class="footer">KidCompass — Plano &amp; Frisco, TX | Columbia &amp; Towson, MD</div>
+  <div class="footer">KiddosCompass — Plano &amp; Frisco, TX | Columbia &amp; Towson, MD</div>
 
   <script>
     const BIZ_ID = '${id}';

@@ -212,7 +212,7 @@ function renderCityPage(app, citySlug) {
   const stateAbbr = city ? city.state : 'TX';
   const businesses = allBusinesses.filter(b => b.city.toLowerCase() === citySlug || slugify(b.city) === citySlug);
   const neighborhoods = city && city.neighborhoods ? city.neighborhoods : null;
-  document.title = `Best Kids Services in ${cityName}, ${stateAbbr} — Tutoring, Activities, Camps & More | KidCompass`;
+  document.title = `Best Kids Services in ${cityName}, ${stateAbbr} — Tutoring, Activities, Camps & More | KiddosCompass`;
 
   if (neighborhoods) {
     // Grouped layout for cities with neighborhoods (Baltimore)
@@ -295,7 +295,7 @@ function renderCategoryPage(app, citySlug, catSlug) {
 
   const heroImg = CAT_HERO_IMGS[catName] || '';
   const seoTitle = getSeoTitle(catName, cityName, city);
-  document.title = `${seoTitle} | KidCompass`;
+  document.title = `${seoTitle} | KiddosCompass`;
 
   app.innerHTML = `
     ${heroImg ? `
@@ -659,7 +659,7 @@ const FAQ_DATA = {
 };
 
 function renderFaqPage(app) {
-  document.title = 'FAQ — Common Questions About Kids Services | KidCompass';
+  document.title = 'FAQ — Common Questions About Kids Services | KiddosCompass';
 
   const faqSchema = [];
   Object.values(FAQ_DATA).forEach(faqs => {
@@ -722,7 +722,7 @@ function renderLegalPage(app, title, content) {
 function renderPrivacyPage(app) {
   renderLegalPage(app, 'Privacy Policy', `
     <p><strong>Last updated:</strong> March 2026</p>
-    <p>KidCompass operates kidsdirectory.netlify.app. This page explains how we collect, use, and protect your information.</p>
+    <p>KiddosCompass operates kiddoscompass.com. This page explains how we collect, use, and protect your information.</p>
 
     <h2>Information We Collect</h2>
     <p><strong>Email address</strong> — only if you subscribe to our newsletter. We do not collect names, payment info, or any data from children.</p>
@@ -748,23 +748,23 @@ function renderPrivacyPage(app) {
     <p>Every email includes an unsubscribe link. You can also email us to request removal of your data.</p>
 
     <h2>Contact</h2>
-    <p>Questions? Email us at <a href="mailto:hello@kidcompass.com">hello@kidcompass.com</a></p>
+    <p>Questions? Email us at <a href="mailto:hello@kiddoscompass.com">hello@kiddoscompass.com</a></p>
   `);
 }
 
 function renderTermsPage(app) {
   renderLegalPage(app, 'Terms of Service', `
     <p><strong>Last updated:</strong> March 2026</p>
-    <p>By using KidCompass, you agree to these terms.</p>
+    <p>By using KiddosCompass, you agree to these terms.</p>
 
-    <h2>What KidCompass Is</h2>
-    <p>KidCompass is a free directory of kids services. We curate listings from public sources (Google Maps, Yelp) and add editorial content to help parents make informed decisions.</p>
+    <h2>What KiddosCompass Is</h2>
+    <p>KiddosCompass is a free directory of kids services. We curate listings from public sources (Google Maps, Yelp) and add editorial content to help parents make informed decisions.</p>
 
     <h2>No Endorsement</h2>
-    <p>Listings on KidCompass are for informational purposes only. We do not endorse, guarantee, or verify any business listed. Always do your own research, visit in person, and verify credentials before enrolling your child.</p>
+    <p>Listings on KiddosCompass are for informational purposes only. We do not endorse, guarantee, or verify any business listed. Always do your own research, visit in person, and verify credentials before enrolling your child.</p>
 
     <h2>Accuracy</h2>
-    <p>We strive to keep information accurate and up-to-date, but business hours, pricing, and services can change. If you notice incorrect information, please <a href="mailto:hello@kidcompass.com">let us know</a>.</p>
+    <p>We strive to keep information accurate and up-to-date, but business hours, pricing, and services can change. If you notice incorrect information, please <a href="mailto:hello@kiddoscompass.com">let us know</a>.</p>
 
     <h2>News Content</h2>
     <p>Our news section curates headlines and links from public sources. We link back to the original source for full articles. All content remains the property of its respective publishers.</p>
@@ -773,22 +773,22 @@ function renderTermsPage(app) {
     <p>Do not use automated tools to scrape this site or submit false information through our forms.</p>
 
     <h2>Limitation of Liability</h2>
-    <p>KidCompass is provided "as is" without warranties. We are not liable for any decisions made based on information found on this site.</p>
+    <p>KiddosCompass is provided "as is" without warranties. We are not liable for any decisions made based on information found on this site.</p>
 
     <h2>Contact</h2>
-    <p>Questions? Email <a href="mailto:hello@kidcompass.com">hello@kidcompass.com</a></p>
+    <p>Questions? Email <a href="mailto:hello@kiddoscompass.com">hello@kiddoscompass.com</a></p>
   `);
 }
 
 function renderAboutPage(app) {
-  renderLegalPage(app, 'About KidCompass', `
+  renderLegalPage(app, 'About KiddosCompass', `
     <h2>For Parents, By Parents</h2>
-    <p>KidCompass helps parents find the best services for their kids — from tutoring centers and swim classes to birthday party venues and pediatricians.</p>
+    <p>KiddosCompass helps parents find the best services for their kids — from tutoring centers and swim classes to birthday party venues and pediatricians.</p>
 
     <h2>What Makes Us Different</h2>
     <ul>
       <li><strong>Curated, not cluttered</strong> — we focus on 8 categories that matter most to families</li>
-      <li><strong>Editorial content</strong> — our "KidCompass Take" tells you what to actually expect, not just what the business says about itself</li>
+      <li><strong>Editorial content</strong> — our "KiddosCompass Take" tells you what to actually expect, not just what the business says about itself</li>
       <li><strong>Local news</strong> — we surface school updates, registration deadlines, new openings, and events from local sources</li>
       <li><strong>Free forever</strong> — no ads, no promoted listings, no paywall</li>
     </ul>
@@ -797,7 +797,7 @@ function renderAboutPage(app) {
     <p>We currently cover <strong>Plano</strong> and <strong>Frisco</strong> in Texas, plus the <strong>Baltimore</strong> metro area in Maryland (Columbia, Towson, Catonsville, Severna Park).</p>
 
     <h2>Get in Touch</h2>
-    <p>Have a suggestion, correction, or just want to say hi? Email us at <a href="mailto:hello@kidcompass.com">hello@kidcompass.com</a></p>
+    <p>Have a suggestion, correction, or just want to say hi? Email us at <a href="mailto:hello@kiddoscompass.com">hello@kiddoscompass.com</a></p>
   `);
 }
 

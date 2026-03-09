@@ -356,7 +356,7 @@ async function cleanupOldNews() {
 }
 
 async function main() {
-  console.log('=== KidCompass News Scraper ===');
+  console.log('=== KiddosCompass News Scraper ===');
 
   // Clean up old news first (keeps Airtable under free tier limit)
   await cleanupOldNews();

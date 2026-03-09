@@ -6,7 +6,7 @@ const path = require('path');
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
 const TABLE = 'Businesses';
-const SITE_URL = 'https://kidsdirectory.netlify.app';
+const SITE_URL = 'https://kiddoscompass.com';
 
 // Upgrade Google Maps image URLs to higher resolution
 function upgradeGoogleImage(url) {

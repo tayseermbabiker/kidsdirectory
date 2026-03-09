@@ -5,7 +5,7 @@ const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_CONTENT_BASE_ID;
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const ALERTS_SECRET = process.env.ALERTS_SECRET;
-const SITE_URL = process.env.URL || 'https://kidsdirectory.netlify.app';
+const SITE_URL = process.env.URL || 'https://kiddoscompass.com';
 
 // Newsletter priority: New Openings, Events, Sports first (Education already on site)
 const CAT_WEIGHT = {
@@ -53,7 +53,7 @@ exports.handler = async (event) => {
       const cityLabel = sub.cities.join(' & ');
       const subject = `This Week in ${cityLabel} — ${fmt(monday)} to ${fmt(sunday)}`;
       return {
-        from: 'KidCompass <weekly@kidsdirectory.netlify.app>',
+        from: 'KiddosCompass <weekly@kiddoscompass.com>',
         to: sub.email,
         subject,
         html: buildEmailHtml(sub, topNews, monday, sunday)
@@ -198,7 +198,7 @@ function buildEmailHtml(subscriber, news, monday, sunday) {
 
     <!-- Header -->
     <div style="text-align:center;padding:20px 0 24px;border-bottom:2px solid #3BA7A0;">
-      <div style="font-size:1.4rem;font-weight:700;color:#3BA7A0;letter-spacing:-0.5px;">KidCompass</div>
+      <div style="font-size:1.4rem;font-weight:700;color:#3BA7A0;letter-spacing:-0.5px;">KiddosCompass</div>
       <div style="font-size:0.82rem;color:#6A6A6A;margin-top:4px;">Your weekly scoop for Plano & Frisco parents</div>
     </div>
 
@@ -235,7 +235,7 @@ function buildEmailHtml(subscriber, news, monday, sunday) {
 
     <!-- Footer -->
     <div style="border-top:1px solid #E4E4E7;padding:16px 0;text-align:center;font-size:0.72rem;color:#999;">
-      <p>KidCompass — Plano & Frisco, TX</p>
+      <p>KiddosCompass — Plano & Frisco, TX</p>
       <p style="margin-top:6px;"><a href="${unsubscribeUrl}" style="color:#999;text-decoration:underline;">Unsubscribe</a></p>
     </div>
 
