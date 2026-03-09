@@ -801,5 +801,96 @@ function renderAboutPage(app) {
   `);
 }
 
+// === GLOBAL SEARCH ===
+
+function initGlobalSearch() {
+  const btn = document.getElementById('nav-search-btn');
+  const overlay = document.getElementById('search-overlay');
+  const input = document.getElementById('global-search-input');
+  const closeBtn = document.getElementById('search-overlay-close');
+  const resultsEl = document.getElementById('search-overlay-results');
+
+  if (!btn || !overlay) return;
+
+  function open() {
+    overlay.classList.add('active');
+    setTimeout(() => input.focus(), 100);
+  }
+
+  function close() {
+    overlay.classList.remove('active');
+    input.value = '';
+    resultsEl.innerHTML = '';
+  }
+
+  btn.addEventListener('click', open);
+  closeBtn.addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && overlay.classList.contains('active')) close();
+    if ((e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey)) { e.preventDefault(); open(); }
+  });
+
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    if (q.length < 2) { resultsEl.innerHTML = ''; return; }
+
+    // Search businesses
+    const bizResults = allBusinesses.filter(b =>
+      b.name.toLowerCase().includes(q) ||
+      b.category.toLowerCase().includes(q) ||
+      (b.description || '').toLowerCase().includes(q) ||
+      (b.neighborhood || '').toLowerCase().includes(q)
+    ).slice(0, 6);
+
+    // Search FAQ
+    const faqResults = [];
+    if (typeof FAQ_DATA !== 'undefined') {
+      Object.entries(FAQ_DATA).forEach(([cat, faqs]) => {
+        faqs.forEach(f => {
+          if (f.q.toLowerCase().includes(q) || f.a.toLowerCase().includes(q)) {
+            faqResults.push({ category: cat, ...f });
+          }
+        });
+      });
+    }
+    const faqSlice = faqResults.slice(0, 4);
+
+    if (bizResults.length === 0 && faqSlice.length === 0) {
+      resultsEl.innerHTML = '<div class="search-empty">No results found</div>';
+      return;
+    }
+
+    let html = '';
+
+    if (bizResults.length) {
+      html += '<div class="search-result-group"><div class="search-result-group-title">Businesses</div></div>';
+      html += bizResults.map(b => `
+        <a href="/go/${b.id}" class="search-result-item">
+          <div class="search-result-icon biz-icon">${getCategoryEmoji(b.category)}</div>
+          <div class="search-result-text">
+            <div class="search-result-name">${escHtml(b.name)}</div>
+            <div class="search-result-meta">${escHtml(b.category)} &middot; ${escHtml(b.city)}${b.rating ? ' &middot; ' + b.rating + ' stars' : ''}</div>
+          </div>
+        </a>`).join('');
+    }
+
+    if (faqSlice.length) {
+      html += '<div class="search-result-group"><div class="search-result-group-title">FAQ</div></div>';
+      html += faqSlice.map(f => `
+        <a href="/faq" class="search-result-item" onclick="setTimeout(()=>{document.querySelectorAll('.faq-question').forEach(el=>{if(el.textContent.includes('${f.q.substring(0,30).replace(/'/g,"\\'")}'))el.closest('details').open=true})},200)">
+          <div class="search-result-icon faq-icon">?</div>
+          <div class="search-result-text">
+            <div class="search-result-name">${escHtml(f.q)}</div>
+            <div class="search-result-meta">${escHtml(f.category)}</div>
+          </div>
+        </a>`).join('');
+    }
+
+    resultsEl.innerHTML = html;
+  });
+}
+
 // Init
 loadData();
+initGlobalSearch();
