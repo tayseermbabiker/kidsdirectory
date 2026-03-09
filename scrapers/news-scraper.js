@@ -66,29 +66,44 @@ async function scrapeFriscoCityAlerts() {
     const html = await res.text();
 
     const articles = [];
-    // Match alert items: title in <a> tags, date nearby
-    const itemRegex = /<div class="(?:row|item)[^"]*"[^>]*>[\s\S]*?<a[^>]*href="([^"]*)"[^>]*>([^<]+)<\/a>[\s\S]*?(?:posted\s*(?:on\s*)?:?\s*)?(\w+ \d{1,2},?\s*\d{4})?/gi;
+    // Split HTML into chunks around each alert item to capture nearby dates
+    const chunks = html.split(/<div class="[^"]*(?:row|item|frItem|listing)[^"]*"/i);
 
-    // Simpler approach — find all links with newsflash detail URLs
-    const linkRegex = /<a[^>]*href="(\/[^"]*(?:newsflash|CivicAlerts)[^"]*Detail[^"]*)"[^>]*>\s*([^<]+?)\s*<\/a>/gi;
-    let match;
-    while ((match = linkRegex.exec(html)) !== null) {
-      const url = 'https://www.friscotexas.gov' + match[1];
-      const title = match[2].trim();
+    for (const chunk of chunks) {
+      // Find link
+      const linkMatch = chunk.match(/<a[^>]*href="(\/[^"]*(?:newsflash|CivicAlerts)[^"]*Detail[^"]*)"[^>]*>\s*([^<]+?)\s*<\/a>/i);
+      if (!linkMatch) continue;
+      const url = 'https://www.friscotexas.gov' + linkMatch[1];
+      const title = linkMatch[2].trim();
       if (title.length < 10 || title.length > 200) continue;
       if (/more|read|view all|subscribe|rss/i.test(title)) continue;
-      articles.push({ title, url, source: 'City of Frisco' });
+      if (articles.some(a => a.title === title)) continue;
+
+      // Extract date from nearby text: "Posted on February 12, 2026" or "February 12, 2026"
+      const dateMatch = chunk.match(/(?:posted\s*(?:on\s*)?:?\s*)?(\w+\s+\d{1,2},?\s*\d{4})/i);
+      let dateStr = '';
+      if (dateMatch) {
+        try {
+          const d = new Date(dateMatch[1]);
+          if (!isNaN(d.getTime())) dateStr = d.toISOString().split('T')[0];
+        } catch (e) {}
+      }
+
+      articles.push({ title, url, source: 'City of Frisco', dateStr });
     }
 
-    // Also try the listing format
-    const listRegex = /<h\d[^>]*>\s*<a[^>]*href="([^"]*)"[^>]*>([^<]+)<\/a>\s*<\/h\d>\s*(?:<[^>]*>)*\s*(?:Posted on:?\s*)?(\w+\s+\d{1,2},?\s*\d{4})?/gi;
-    while ((match = listRegex.exec(html)) !== null) {
-      const url = match[1].startsWith('http') ? match[1] : 'https://www.friscotexas.gov' + match[1];
-      const title = match[2].trim();
-      const dateStr = match[3] || '';
-      if (title.length < 10 || title.length > 200) continue;
-      if (articles.some(a => a.title === title)) continue;
-      articles.push({ title, url, source: 'City of Frisco', dateStr });
+    // Fallback: simple link scan if chunk approach found nothing
+    if (articles.length === 0) {
+      const linkRegex = /<a[^>]*href="(\/[^"]*(?:newsflash|CivicAlerts)[^"]*Detail[^"]*)"[^>]*>\s*([^<]+?)\s*<\/a>/gi;
+      let match;
+      while ((match = linkRegex.exec(html)) !== null) {
+        const url = 'https://www.friscotexas.gov' + match[1];
+        const title = match[2].trim();
+        if (title.length < 10 || title.length > 200) continue;
+        if (/more|read|view all|subscribe|rss/i.test(title)) continue;
+        if (articles.some(a => a.title === title)) continue;
+        articles.push({ title, url, source: 'City of Frisco' });
+      }
     }
 
     console.log(`  Found ${articles.length} alerts`);
@@ -108,21 +123,36 @@ async function scrapeFriscoISD(page) {
 
     const articles = await page.evaluate(() => {
       const items = [];
-      // Try common news listing patterns
-      document.querySelectorAll('a[href*="/news/"], a[href*="/article"], .news-item a, .post a, article a').forEach(a => {
+      // Try common news listing patterns — look for article containers with dates
+      document.querySelectorAll('article, .news-item, .post, [class*="news"]').forEach(container => {
+        const a = container.querySelector('a[href*="/news/"], a[href*="/article"], h2 a, h3 a, h4 a');
+        if (!a) return;
         const title = a.innerText.trim();
         const href = a.href;
-        if (title.length > 15 && title.length < 200 && href && !items.some(i => i.title === title)) {
-          items.push({ title, url: href });
+        if (title.length < 15 || title.length > 200 || !href || items.some(i => i.title === title)) return;
+
+        // Look for date in the same container
+        let dateStr = '';
+        const dateEl = container.querySelector('time, [class*="date"], [class*="Date"], .meta, .posted');
+        if (dateEl) {
+          dateStr = dateEl.getAttribute('datetime') || dateEl.innerText.trim();
         }
+        if (!dateStr) {
+          const text = container.innerText;
+          const dm = text.match(/(\w+\s+\d{1,2},?\s*\d{4})/);
+          if (dm) dateStr = dm[1];
+        }
+
+        items.push({ title, url: href, dateStr });
       });
-      // Fallback: any h2/h3 inside main content
+
+      // Fallback: link scan
       if (items.length < 3) {
-        document.querySelectorAll('h2 a, h3 a, h4 a').forEach(a => {
+        document.querySelectorAll('a[href*="/news/"], a[href*="/article"], h2 a, h3 a, h4 a').forEach(a => {
           const title = a.innerText.trim();
           const href = a.href;
           if (title.length > 15 && title.length < 200 && href && !items.some(i => i.title === title)) {
-            items.push({ title, url: href });
+            items.push({ title, url: href, dateStr: '' });
           }
         });
       }
