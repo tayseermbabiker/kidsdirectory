@@ -99,11 +99,6 @@ function getSavedCount() {
 }
 
 function renderHome(app) {
-  const featured = allBusinesses
-    .filter(b => b.rating >= 4.5 && b.image_url)
-    .sort((a, b) => (b.review_count || 0) - (a.review_count || 0))
-    .slice(0, 6);
-
   const totalCount = allBusinesses.length;
   const catCount = CATEGORIES.length;
   const savedCount = getSavedCount();
@@ -171,16 +166,6 @@ function renderHome(app) {
           </a>`;
           }).join('')}
         </div>
-      </div>
-    </div>` : ''}
-
-    ${featured.length ? `
-    <div class="section">
-      <div class="section-header">
-        <h2>Top Rated by Parents</h2>
-      </div>
-      <div class="biz-grid">
-        ${featured.map(renderBizCard).join('')}
       </div>
     </div>` : ''}
 
