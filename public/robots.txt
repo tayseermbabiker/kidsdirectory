@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://kidcompass.netlify.app/sitemap.xml
+Sitemap: https://kiddoscompass.com/sitemap.xml
