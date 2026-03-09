@@ -134,7 +134,7 @@ img { max-width: 100%; display: block; }
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background: #2a3a3a;
+  background: #1a2e2e;
 }
 
 .hero-bg {
@@ -142,7 +142,14 @@ img { max-width: 100%; display: block; }
   inset: 0;
   background-size: cover;
   background-position: center 30%;
-  filter: brightness(0.55);
+  filter: brightness(0.85);
+}
+
+.hero-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.45) 100%);
 }
 
 .hero-content {
