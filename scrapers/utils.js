@@ -44,10 +44,15 @@ async function pushToAirtable(businesses) {
     return;
   }
 
-  const existingSlugs = await getExistingSlugs();
-  const newBiz = businesses.filter(b => !existingSlugs.has(b.slug));
+  // Quality filter: 4.0+ rating OR no rating (new/unreviewed businesses)
+  const quality = businesses.filter(b => !b.rating || b.rating >= 4.0);
+  const skippedLowRating = businesses.length - quality.length;
+  if (skippedLowRating) console.log(`Filtered out ${skippedLowRating} businesses below 4.0 rating`);
 
-  console.log(`Found ${businesses.length} total, ${newBiz.length} new (${businesses.length - newBiz.length} duplicates skipped)`);
+  const existingSlugs = await getExistingSlugs();
+  const newBiz = quality.filter(b => !existingSlugs.has(b.slug));
+
+  console.log(`Found ${businesses.length} total, ${newBiz.length} new (${skippedLowRating} low-rated, ${businesses.length - skippedLowRating - newBiz.length} duplicates skipped)`);
 
   if (!newBiz.length) return;
 
