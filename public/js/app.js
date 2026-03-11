@@ -906,6 +906,28 @@ function initGlobalSearch() {
   });
 }
 
+// Hamburger menu toggle
+function initHamburger() {
+  const btn = document.getElementById('nav-hamburger');
+  const links = document.getElementById('nav-links');
+  if (!btn || !links) return;
+  btn.addEventListener('click', () => {
+    links.classList.toggle('open');
+    const isOpen = links.classList.contains('open');
+    btn.innerHTML = isOpen
+      ? '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+      : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>';
+  });
+  // Close menu on link click
+  links.addEventListener('click', (e) => {
+    if (e.target.closest('a')) {
+      links.classList.remove('open');
+      btn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>';
+    }
+  });
+}
+
 // Init
 loadData();
 initGlobalSearch();
+initHamburger();
