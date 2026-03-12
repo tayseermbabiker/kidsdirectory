@@ -4,6 +4,38 @@ let currentCity = null;
 let currentCategory = null;
 let searchQuery = '';
 
+// ZIP code → city/neighborhood mapping for search
+const ZIP_MAP = {
+  // Plano TX
+  '75023': 'Plano', '75024': 'Plano', '75025': 'Plano', '75026': 'Plano',
+  '75074': 'Plano', '75075': 'Plano', '75086': 'Plano', '75093': 'Plano', '75094': 'Plano',
+  // Frisco TX
+  '75033': 'Frisco', '75034': 'Frisco', '75035': 'Frisco', '75036': 'Frisco',
+  // Baltimore — Howard County
+  '21029': 'Howard County', '21036': 'Howard County', '21042': 'Howard County', '21043': 'Howard County',
+  '21044': 'Howard County', '21045': 'Howard County', '21046': 'Howard County', '21075': 'Howard County',
+  '21104': 'Howard County', '21723': 'Howard County', '21737': 'Howard County', '21738': 'Howard County',
+  '21784': 'Howard County', '21794': 'Howard County',
+  // Baltimore — Baltimore County
+  '21030': 'Baltimore County', '21093': 'Baltimore County', '21117': 'Baltimore County',
+  '21133': 'Baltimore County', '21204': 'Baltimore County', '21208': 'Baltimore County',
+  '21209': 'Baltimore County', '21212': 'Baltimore County', '21222': 'Baltimore County',
+  '21228': 'Baltimore County', '21234': 'Baltimore County', '21236': 'Baltimore County',
+  '21286': 'Baltimore County',
+  // Baltimore — Anne Arundel County
+  '21012': 'Anne Arundel County', '21032': 'Anne Arundel County', '21054': 'Anne Arundel County',
+  '21060': 'Anne Arundel County', '21061': 'Anne Arundel County', '21076': 'Anne Arundel County',
+  '21108': 'Anne Arundel County', '21113': 'Anne Arundel County', '21114': 'Anne Arundel County',
+  '21122': 'Anne Arundel County', '21144': 'Anne Arundel County', '21146': 'Anne Arundel County',
+  '21401': 'Anne Arundel County', '21403': 'Anne Arundel County',
+  // Baltimore — Harford County
+  '21001': 'Harford County', '21009': 'Harford County', '21010': 'Harford County',
+  '21014': 'Harford County', '21015': 'Harford County', '21040': 'Harford County',
+  '21047': 'Harford County', '21050': 'Harford County', '21078': 'Harford County',
+  '21085': 'Harford County', '21111': 'Harford County', '21154': 'Harford County',
+  '21160': 'Harford County',
+};
+
 // Unsplash hero image — dad with two young kids outdoors
 const HERO_IMG = 'https://images.unsplash.com/photo-1609220136736-443140cffec6?w=1400&q=80&auto=format&fit=crop';
 
@@ -190,10 +222,13 @@ function renderHome(app) {
     searchInput.addEventListener('input', (e) => {
       searchQuery = e.target.value.trim().toLowerCase();
       if (searchQuery.length >= 2) {
+        const zipCity = ZIP_MAP[searchQuery] || ZIP_MAP[searchQuery.replace(/\D/g, '')];
         const results = allBusinesses.filter(b =>
           b.name.toLowerCase().includes(searchQuery) ||
           b.category.toLowerCase().includes(searchQuery) ||
-          (b.description || '').toLowerCase().includes(searchQuery)
+          (b.description || '').toLowerCase().includes(searchQuery) ||
+          (b.address || '').toLowerCase().includes(searchQuery) ||
+          (zipCity && (b.city === zipCity || b.neighborhood === zipCity || (b.city === 'Baltimore' && zipCity.includes('County'))))
         ).slice(0, 12);
         renderSearchResults(results);
       }
@@ -850,13 +885,16 @@ function initGlobalSearch() {
     const q = input.value.trim().toLowerCase();
     if (q.length < 2) { resultsEl.innerHTML = ''; return; }
 
-    // Search businesses
+    // Search businesses (name, category, description, neighborhood, address/ZIP)
+    const zipCity = ZIP_MAP[q] || ZIP_MAP[q.replace(/\D/g, '')];
     const bizResults = allBusinesses.filter(b =>
       b.name.toLowerCase().includes(q) ||
       b.category.toLowerCase().includes(q) ||
       (b.description || '').toLowerCase().includes(q) ||
-      (b.neighborhood || '').toLowerCase().includes(q)
-    ).slice(0, 6);
+      (b.neighborhood || '').toLowerCase().includes(q) ||
+      (b.address || '').toLowerCase().includes(q) ||
+      (zipCity && (b.city === zipCity || b.neighborhood === zipCity || (b.city === 'Baltimore' && zipCity.includes('County'))))
+    ).slice(0, 8);
 
     // Search FAQ
     const faqResults = [];
