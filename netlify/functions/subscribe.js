@@ -21,7 +21,12 @@ exports.handler = async (event) => {
 
   try {
     const body = JSON.parse(event.body);
-    const { email, first_name, categories, cities } = body;
+    const { email, first_name, categories, cities, website } = body;
+
+    // Honeypot — bots fill this hidden field, humans don't
+    if (website) {
+      return { statusCode: 200, headers, body: JSON.stringify({ message: 'Subscribed successfully!' }) };
+    }
 
     if (!email) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Email is required' }) };

@@ -207,6 +207,7 @@ function renderHome(app) {
         <p>School updates, registration deadlines, new openings, and things to do with kids this weekend.</p>
         <form class="subscribe-form" id="subscribe-form">
           <input type="email" name="email" placeholder="Your email address" required>
+          <input type="text" name="website" style="position:absolute;left:-9999px;opacity:0;height:0;" tabindex="-1" autocomplete="off">
           <div class="subscribe-cities">
             ${CITIES.map(c => `<label class="city-check"><input type="checkbox" name="city" value="${c.name}" checked> ${c.name}</label>`).join('\n            ')}
           </div>
@@ -505,6 +506,8 @@ function getCategoryEmoji(category) {
 async function handleSubscribe(e) {
   e.preventDefault();
   const form = e.target;
+  const honeypot = form.querySelector('input[name="website"]');
+  if (honeypot && honeypot.value) return; // Bot detected
   const email = form.querySelector('input[name="email"]').value;
   const cities = [...form.querySelectorAll('input[name="city"]:checked')].map(c => c.value);
   const msg = document.getElementById('subscribe-msg');
