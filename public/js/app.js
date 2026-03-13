@@ -145,7 +145,7 @@ function renderHome(app) {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
           </svg>
-          <input type="text" id="search-input" placeholder="Search tutoring, swim lessons, party venues..." autocomplete="off">
+          <input type="text" id="search-input" placeholder="Search by name, category, or ZIP code..." autocomplete="off">
         </div>
       </div>
     </div>
