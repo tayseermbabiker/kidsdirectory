@@ -21,7 +21,7 @@ exports.handler = async (event) => {
 
   try {
     const body = JSON.parse(event.body);
-    const { email, first_name, categories, cities, website } = body;
+    const { email, first_name, cities, website } = body;
 
     // Honeypot — bots fill this hidden field, humans don't
     if (website) {
@@ -44,9 +44,8 @@ exports.handler = async (event) => {
       return { statusCode: 200, headers, body: JSON.stringify({ message: "You're already subscribed!" }) };
     }
 
-    // Create subscriber (categories/cities are multilineText in Airtable)
+    // Create subscriber
     const token = crypto.randomBytes(32).toString('hex');
-    const defaultCategories = (categories || []).join('\n') || 'All';
     const defaultCities = (cities || []).join('\n') || 'Plano\nFrisco';
     const createUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(TABLE_NAME)}`;
     const createRes = await fetch(createUrl, {
@@ -59,7 +58,6 @@ exports.handler = async (event) => {
         fields: {
           email,
           first_name: first_name || '',
-          categories: defaultCategories,
           cities: defaultCities,
           is_active: true,
           created_at: new Date().toISOString().split('T')[0],
