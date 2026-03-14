@@ -77,7 +77,7 @@ exports.handler = async (event) => {
       const name = first_name || 'there';
       const cityList = (cities || ['Plano', 'Frisco']).join(', ');
       try {
-        await fetch('https://api.resend.com/emails', {
+        const emailRes = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${RESEND_API_KEY}`,
@@ -119,6 +119,8 @@ exports.handler = async (event) => {
 </body></html>`
           })
         });
+        const emailData = await emailRes.json();
+        console.log('Resend response:', emailRes.status, JSON.stringify(emailData));
       } catch (e) {
         console.log('Welcome email failed:', e.message);
       }
