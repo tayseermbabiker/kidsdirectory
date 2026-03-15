@@ -89,8 +89,7 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       body: JSON.stringify({
-        message: `Sent ${subscribers.length} emails with ${topNews.length} news items`,
-        subject
+        message: `Sent ${emails.length} emails with ${news.length} news items available`
       })
     };
   } catch (err) {
