@@ -150,6 +150,9 @@ function filterNewsByCities(news, cities) {
   if (!cities || cities.length === 0) return news;
   const cityLower = cities.map(c => c.toLowerCase());
   return news.filter(n => {
+    // Match against the city field first, then fallback to title/snippet
+    const newsCity = (n.city || '').toLowerCase();
+    if (cityLower.some(c => newsCity.includes(c) || c.includes(newsCity))) return true;
     const text = ((n.title || '') + ' ' + (n.snippet || '')).toLowerCase();
     return cityLower.some(c => text.includes(c));
   });

@@ -46,7 +46,7 @@ exports.handler = async (event) => {
 
     // Create subscriber
     const token = crypto.randomBytes(32).toString('hex');
-    const defaultCities = (cities || []).join('\n') || 'Plano\nFrisco';
+    const defaultCities = (cities || []).join('\n') || 'Plano\nFrisco\nBaltimore';
     const createUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(TABLE_NAME)}`;
     const createRes = await fetch(createUrl, {
       method: 'POST',
