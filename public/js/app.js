@@ -184,11 +184,11 @@ function renderHome(app) {
       </div>
       <div class="news-slider-wrapper">
         <div class="news-slider-track" id="news-track">
-          ${[...prioritizeNews(allNews, 6), ...prioritizeNews(allNews, 6)].map(n => {
+          ${[...prioritizeNews(allNews, 10), ...prioritizeNews(allNews, 10)].map(n => {
             const date = n.published_at ? formatNewsDate(n.published_at) : '';
             return `
           <a href="${escHtml(n.url)}" target="_blank" rel="noopener" class="news-card">
-            <div class="news-card-cat"><span class="news-cat-dot" data-cat="${escHtml(n.category)}"></span>${escHtml(n.category)}</div>
+            <div class="news-card-cat"><span class="news-cat-dot" data-cat="${escHtml(n.category)}"></span>${escHtml(n.category)}${n.city ? ` <span style="color:#999;font-weight:400;">— ${escHtml(n.city)}</span>` : ''}</div>
             <h3 class="news-card-title">${escHtml(n.title)}</h3>
             ${n.snippet ? `<p class="news-card-snippet">${escHtml(n.snippet.substring(0, 100))}${n.snippet.length > 100 ? '...' : ''}</p>` : ''}
             <div class="news-card-meta">
@@ -542,10 +542,10 @@ function getNewsCatIcon(cat) {
   return map[cat] || 'news';
 }
 
-// Carousel shows Education, Health & Safety, Community only
-// New Openings, Events, Sports & Activities go to the weekly newsletter
+// Carousel shows Education, Health & Safety, Community, Local Impact only
+// New Openings, Events, Sports & Activities are exclusive to the weekly newsletter
 function prioritizeNews(news, max) {
-  const CAROUSEL_CATS = ['Education', 'Health & Safety', 'Community'];
+  const CAROUSEL_CATS = ['Education', 'Health & Safety', 'Community', 'Local Impact'];
   const filtered = news.filter(n => CAROUSEL_CATS.includes(n.category));
   const now = new Date();
   const scored = filtered.map(n => {
@@ -556,23 +556,25 @@ function prioritizeNews(news, max) {
     }
     return { ...n, score: recency };
   });
-  scored.sort((a, b) => b.score - a.score);
-  // Round-robin across cities so carousel mixes all locations
+  // Group by city, sort each group by recency, then concat city blocks
+  const cityOrder = ['Plano', 'Frisco', 'Baltimore'];
   const byCity = {};
   scored.forEach(n => {
     const c = n.city || 'Other';
     if (!byCity[c]) byCity[c] = [];
     byCity[c].push(n);
   });
-  const cityQueues = Object.values(byCity);
+  // Sort within each city by score
+  Object.values(byCity).forEach(arr => arr.sort((a, b) => b.score - a.score));
   const result = [];
-  let i = 0;
-  while (result.length < max && cityQueues.some(q => q.length > 0)) {
-    const q = cityQueues[i % cityQueues.length];
-    if (q.length) result.push(q.shift());
-    i++;
-  }
-  return result;
+  cityOrder.forEach(city => {
+    if (byCity[city]) result.push(...byCity[city]);
+  });
+  // Add any remaining cities not in cityOrder
+  Object.keys(byCity).forEach(city => {
+    if (!cityOrder.includes(city)) result.push(...byCity[city]);
+  });
+  return result.slice(0, max);
 }
 
 function formatNewsDate(dateStr) {
