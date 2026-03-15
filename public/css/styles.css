@@ -976,7 +976,7 @@ img { max-width: 100%; display: block; }
 .news-slider-track {
   display: flex;
   gap: 16px;
-  animation: newsSlide 20s linear infinite;
+  animation: newsSlide 45s linear infinite;
   will-change: transform;
 }
 
