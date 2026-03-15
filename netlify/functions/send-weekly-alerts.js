@@ -9,22 +9,10 @@ const SITE_URL = process.env.URL || 'https://kiddoscompass.com';
 
 // Exclusive = newsletter only, Website = also on carousel
 const EXCLUSIVE_CATS = ['New Openings', 'Events', 'Sports & Activities'];
-const WEBSITE_CATS = ['Education', 'Health & Safety', 'Community', 'Local Impact'];
-
 const CITY_META = {
   'Plano': { label: 'Plano, TX', slug: 'plano' },
   'Frisco': { label: 'Frisco, TX', slug: 'frisco' },
   'Baltimore': { label: 'Baltimore, MD', slug: 'baltimore' }
-};
-
-const CAT_COLORS = {
-  'New Openings': '#E87040',
-  'Events': '#7C5CFC',
-  'Sports & Activities': '#2B8FD4',
-  'Health & Safety': '#D44B4B',
-  'Education': '#3BA7A0',
-  'Community': '#6A6A6A',
-  'Local Impact': '#C4841D'
 };
 
 exports.handler = async (event) => {
@@ -213,16 +201,12 @@ function groupByCityAndCategory(news, subscriberCities) {
     if (!cityNews.length) continue;
 
     const exclusive = {};
-    const website = {};
 
     for (const n of cityNews) {
       const cat = n.category || 'Other';
       if (EXCLUSIVE_CATS.includes(cat)) {
         if (!exclusive[cat]) exclusive[cat] = [];
         exclusive[cat].push(n);
-      } else if (WEBSITE_CATS.includes(cat)) {
-        if (!website[cat]) website[cat] = [];
-        website[cat].push(n);
       }
     }
 
@@ -231,10 +215,9 @@ function groupByCityAndCategory(news, subscriberCities) {
       new Date(b.published_at || 0) - new Date(a.published_at || 0)
     );
     Object.values(exclusive).forEach(sortByRecency);
-    Object.values(website).forEach(sortByRecency);
 
-    if (Object.keys(exclusive).length || Object.keys(website).length) {
-      result[city] = { exclusive, website };
+    if (Object.keys(exclusive).length) {
+      result[city] = { exclusive };
     }
   }
 
@@ -255,7 +238,7 @@ function buildEmailHtml(subscriber, news, monday, sunday) {
 
   cityKeys.forEach((city, cityIdx) => {
     const meta = CITY_META[city] || { label: city, slug: city.toLowerCase() };
-    const { exclusive, website } = grouped[city];
+    const { exclusive } = grouped[city];
 
     // City header
     citySections += `
@@ -276,71 +259,26 @@ function buildEmailHtml(subscriber, news, monday, sunday) {
       </td>
     </tr>`;
 
-    // Exclusive categories (newsletter-only content)
+    // Exclusive categories only (newsletter-only content)
     for (const cat of EXCLUSIVE_CATS) {
       if (!exclusive[cat] || !exclusive[cat].length) continue;
-      const color = CAT_COLORS[cat] || '#3BA7A0';
 
       citySections += `
     <tr>
       <td style="padding:14px 28px 4px;">
-        <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom:8px;">
-          <tr>
-            <td valign="middle">
-              <span style="font-size:12px;font-weight:700;color:#1a1a2e;text-transform:uppercase;letter-spacing:0.5px;">${esc(cat)}</span>
-            </td>
-            <td valign="middle" style="padding-left:8px;">
-              <span style="display:inline-block;padding:2px 8px;background-color:#FFF8E1;color:#8a6200;font-size:9px;font-weight:700;border-radius:4px;letter-spacing:0.3px;border:1px solid #ffe082;">
-                SUBSCRIBER EXCLUSIVE
-              </span>
-            </td>
-          </tr>
-        </table>`;
+        <p style="margin:0 0 8px;font-size:11px;font-weight:700;color:#1a1a2e;text-transform:uppercase;letter-spacing:0.5px;">${esc(cat)}</p>`;
 
       for (const n of exclusive[cat]) {
         const title = cleanTitle(n.title);
         citySections += `
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #e8e8e8;border-radius:7px;margin-bottom:8px;">
           <tr>
-            <td style="border-left:4px solid ${color};padding:12px 14px;">
-              <a href="${esc(n.url || '#')}" style="font-size:14px;font-weight:700;color:#1a1a2e;text-decoration:none;line-height:1.4;display:block;">${esc(title)}</a>
+            <td style="border-left:4px solid #3BA7A0;padding:12px 14px;">
+              <a href="${esc(n.url || '#')}" style="font-size:14px;font-weight:600;color:#1a1a2e;text-decoration:none;line-height:1.4;display:block;">${esc(title)}</a>
               <p style="margin:5px 0 0;font-size:11px;color:#999;">${esc(n.source || '')}</p>
             </td>
           </tr>
         </table>`;
-      }
-
-      citySections += `
-      </td>
-    </tr>`;
-    }
-
-    // Website categories (also on site — compact teasers)
-    const hasWebsite = WEBSITE_CATS.some(cat => website[cat] && website[cat].length);
-    if (hasWebsite) {
-      citySections += `
-    <tr>
-      <td style="padding:12px 28px 4px;">
-        <p style="margin:0 0 8px;font-size:10px;color:#999;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;">
-          Also on KiddosCompass
-        </p>`;
-
-      for (const cat of WEBSITE_CATS) {
-        if (!website[cat] || !website[cat].length) continue;
-        // Show max 2 per website category to keep it compact
-        const items = website[cat].slice(0, 2);
-        for (const n of items) {
-          const title = cleanTitle(n.title);
-          citySections += `
-        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:6px;">
-          <tr>
-            <td style="padding:10px 14px;background-color:#f5fafa;border-radius:6px;border-left:3px solid #3BA7A0;">
-              <p style="margin:0 0 2px;font-size:9px;font-weight:700;color:#3BA7A0;text-transform:uppercase;letter-spacing:0.5px;">${esc(cat)}</p>
-              <a href="${esc(n.url || '#')}" style="font-size:13px;font-weight:600;color:#1a1a2e;text-decoration:none;line-height:1.35;display:block;">${esc(title)}</a>
-            </td>
-          </tr>
-        </table>`;
-        }
       }
 
       citySections += `
