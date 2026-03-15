@@ -206,6 +206,7 @@ function renderHome(app) {
         <h2>Join Local Parents Who Get the Weekly Scoop</h2>
         <p>School updates, registration deadlines, new openings, and things to do with kids this weekend.</p>
         <form class="subscribe-form" id="subscribe-form">
+          <input type="text" name="first_name" placeholder="Your first name" autocomplete="given-name">
           <input type="email" name="email" placeholder="Your email address" required>
           <input type="text" name="website" style="position:absolute;left:-9999px;opacity:0;height:0;" tabindex="-1" autocomplete="off">
           <div class="subscribe-cities">
@@ -508,6 +509,7 @@ async function handleSubscribe(e) {
   const form = e.target;
   const honeypot = form.querySelector('input[name="website"]');
   if (honeypot && honeypot.value) return; // Bot detected
+  const first_name = form.querySelector('input[name="first_name"]').value.trim();
   const email = form.querySelector('input[name="email"]').value;
   const cities = [...form.querySelectorAll('input[name="city"]:checked')].map(c => c.value);
   const msg = document.getElementById('subscribe-msg');
@@ -523,7 +525,7 @@ async function handleSubscribe(e) {
     const res = await fetch('/api/subscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, cities })
+      body: JSON.stringify({ email, first_name, cities })
     });
     const data = await res.json();
     msg.style.display = 'block';

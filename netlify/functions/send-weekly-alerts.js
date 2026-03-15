@@ -8,7 +8,9 @@ const ALERTS_SECRET = process.env.ALERTS_SECRET;
 const SITE_URL = process.env.URL || 'https://kiddoscompass.com';
 
 // Exclusive = newsletter only, Website = also on carousel
-const EXCLUSIVE_CATS = ['New Openings', 'Events', 'Sports & Activities'];
+// Order matters: Events first (time-sensitive), then openings, then sports
+const EXCLUSIVE_CATS = ['Events', 'New Openings', 'Sports & Activities'];
+const CAT_CAPS = { 'Events': 5, 'New Openings': 3, 'Sports & Activities': 4 };
 const CITY_META = {
   'Plano': { label: 'Plano, TX', slug: 'plano' },
   'Frisco': { label: 'Frisco, TX', slug: 'frisco' },
@@ -49,7 +51,7 @@ exports.handler = async (event) => {
       if (!subNews.length) { skipped++; continue; }
 
       const cityLabel = sub.cities.join(' & ');
-      const subject = `This Week in ${cityLabel} — ${fmt(monday)} to ${fmt(sunday)}`;
+      const subject = `This Week for Your Kiddos (${fmt(monday)}-${fmt(sunday)})`;
       emails.push({
         from: 'KiddosCompass <weekly@kiddoscompass.com>',
         to: sub.email,
@@ -268,7 +270,8 @@ function buildEmailHtml(subscriber, news, monday, sunday) {
       <td style="padding:14px 28px 4px;">
         <p style="margin:0 0 8px;font-size:11px;font-weight:700;color:#1a1a2e;text-transform:uppercase;letter-spacing:0.5px;">${esc(cat)}</p>`;
 
-      for (const n of exclusive[cat]) {
+      const cap = CAT_CAPS[cat] || 5;
+      for (const n of exclusive[cat].slice(0, cap)) {
         const title = cleanTitle(n.title);
         citySections += `
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #e8e8e8;border-radius:7px;margin-bottom:8px;">
