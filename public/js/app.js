@@ -548,34 +548,40 @@ function getNewsCatIcon(cat) {
 // New Openings, Events, Sports & Activities are exclusive to the weekly newsletter
 function prioritizeNews(news, max) {
   const CAROUSEL_CATS = ['Education', 'Health & Safety', 'Community', 'Local Impact'];
-  const filtered = news.filter(n => CAROUSEL_CATS.includes(n.category));
   const now = new Date();
-  const scored = filtered.map(n => {
-    let recency = 0;
-    if (n.published_at) {
-      const days = Math.floor((now - new Date(n.published_at + 'T00:00:00')) / 86400000);
-      recency = days <= 2 ? 3 : days <= 4 ? 2 : days <= 7 ? 1 : 0;
-    }
-    return { ...n, score: recency };
+  // Filter: carousel categories + last 14 days only
+  const filtered = news.filter(n => {
+    if (!CAROUSEL_CATS.includes(n.category)) return false;
+    if (!n.published_at) return false;
+    const days = Math.floor((now - new Date(n.published_at + 'T00:00:00')) / 86400000);
+    return days <= 14;
   });
-  // Group by city, sort each group by recency, then concat city blocks
+  // Sort by recency
+  filtered.sort((a, b) => new Date(b.published_at + 'T00:00:00') - new Date(a.published_at + 'T00:00:00'));
+  // Fair distribution: max per city = ceil(max / number of cities with content)
   const cityOrder = ['Plano', 'Frisco', 'Baltimore'];
   const byCity = {};
-  scored.forEach(n => {
+  filtered.forEach(n => {
     const c = n.city || 'Other';
     if (!byCity[c]) byCity[c] = [];
     byCity[c].push(n);
   });
-  // Sort within each city by score
-  Object.values(byCity).forEach(arr => arr.sort((a, b) => b.score - a.score));
+  const activeCities = cityOrder.filter(c => byCity[c] && byCity[c].length);
+  const perCity = Math.ceil(max / Math.max(activeCities.length, 1));
   const result = [];
-  cityOrder.forEach(city => {
-    if (byCity[city]) result.push(...byCity[city]);
+  activeCities.forEach(city => {
+    result.push(...byCity[city].slice(0, perCity));
   });
-  // Add any remaining cities not in cityOrder
-  Object.keys(byCity).forEach(city => {
-    if (!cityOrder.includes(city)) result.push(...byCity[city]);
-  });
+  // Fill remaining slots if any city had fewer than perCity
+  if (result.length < max) {
+    activeCities.forEach(city => {
+      const remaining = byCity[city].slice(perCity);
+      for (const n of remaining) {
+        if (result.length >= max) break;
+        result.push(n);
+      }
+    });
+  }
   return result.slice(0, max);
 }
 
