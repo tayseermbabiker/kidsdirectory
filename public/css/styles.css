@@ -926,7 +926,7 @@ img { max-width: 100%; display: block; }
 }
 
 @media (max-width: 768px) {
-  .hero h1 { font-size: 1.6rem; white-space: normal; }
+  .hero h1 { font-size: 1.35rem; }
   .hero { min-height: 280px; }
   .cat-grid { grid-template-columns: 1fr; }
   .biz-grid { grid-template-columns: 1fr; }
@@ -958,7 +958,7 @@ img { max-width: 100%; display: block; }
 
 @media (max-width: 480px) {
   .hero { min-height: 240px; }
-  .hero h1 { font-size: 1.3rem; white-space: normal; }
+  .hero h1 { font-size: 1.1rem; }
   .hero-content { padding: 32px 16px 28px; }
   .section { padding: 32px 16px; }
   .nav { padding: 0 16px; }
