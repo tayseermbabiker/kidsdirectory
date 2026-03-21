@@ -124,6 +124,23 @@ function route() {
   if (path === '/about') { renderAboutPage(app); return; }
 
   renderHome(app);
+  updateSeoMeta();
+}
+
+function updateSeoMeta() {
+  const canonical = document.getElementById('canonical-link');
+  if (canonical) canonical.href = 'https://kiddoscompass.com' + window.location.pathname;
+
+  const desc = document.querySelector('meta[name="description"]');
+  if (desc) {
+    const path = window.location.pathname;
+    if (path === '/' || path === '') {
+      desc.content = 'Find the best tutoring centers, swim lessons, birthday party venues, summer camps, daycares, and pediatric dentists for kids in Plano TX, Frisco TX, and Baltimore MD.';
+    } else {
+      // Use the page title as a base for description
+      desc.content = document.title.replace(' | KiddosCompass', '') + ' — ratings, reviews, and hours trusted by local parents.';
+    }
+  }
 }
 
 function getSavedCount() {
