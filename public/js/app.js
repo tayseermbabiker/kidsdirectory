@@ -98,7 +98,7 @@ function route() {
   const path = window.location.pathname;
   const app = document.getElementById('app');
 
-  if (path === '/' || path === '') { renderHome(app); return; }
+  if (path === '/' || path === '') { renderHome(app); updateSeoMeta(); return; }
 
   const citySlugs = CITIES.map(c => c.slug).join('|');
   const cityMatch = path.match(new RegExp(`^\\/(${citySlugs})\\/?$`));
@@ -106,6 +106,8 @@ function route() {
     currentCity = cityMatch[1];
     currentCategory = null;
     renderCityPage(app, currentCity);
+    const city = cityFromSlug(currentCity);
+    updateSeoMeta(null, city ? city.name : currentCity);
     return;
   }
 
@@ -114,20 +116,34 @@ function route() {
     currentCity = catMatch[1];
     currentCategory = catMatch[2];
     renderCategoryPage(app, currentCity, currentCategory);
+    const cat = categoryFromSlug(currentCategory);
+    const city = currentCity === 'all' ? null : cityFromSlug(currentCity);
+    updateSeoMeta(cat ? cat.name : null, city ? `${city.name}, ${city.state}` : null);
     return;
   }
 
-  if (path === '/saved') { renderSavedPage(app); return; }
-  if (path === '/faq') { renderFaqPage(app); return; }
-  if (path === '/privacy') { renderPrivacyPage(app); return; }
-  if (path === '/terms') { renderTermsPage(app); return; }
-  if (path === '/about') { renderAboutPage(app); return; }
+  if (path === '/saved') { renderSavedPage(app); updateSeoMeta(); return; }
+  if (path === '/faq') { renderFaqPage(app); updateSeoMeta(); return; }
+  if (path === '/privacy') { renderPrivacyPage(app); updateSeoMeta(); return; }
+  if (path === '/terms') { renderTermsPage(app); updateSeoMeta(); return; }
+  if (path === '/about') { renderAboutPage(app); updateSeoMeta(); return; }
 
   renderHome(app);
   updateSeoMeta();
 }
 
-function updateSeoMeta() {
+const SEO_DESCRIPTIONS = {
+  'Tutoring & Learning Centers': (loc) => `Compare the best tutoring centers for kids in ${loc}. Kumon, Mathnasium, Sylvan & more. Parent reviews, ratings, hours, and pricing.`,
+  'Kids Activities & Classes': (loc) => `Find swim lessons, martial arts, dance, coding, and art classes for kids in ${loc}. Parent reviews, ages, pricing, and schedules.`,
+  'Birthday Party Venues': (loc) => `Best birthday party venues for kids in ${loc}. Trampoline parks, play centers, bowling, and more. Packages, pricing, and parent reviews.`,
+  'Summer Camps & After School': (loc) => `Top summer camps and after school programs in ${loc}. STEM, sports, arts, and nature camps. Ages, dates, costs, and parent reviews.`,
+  'Pediatric Dentists & Doctors': (loc) => `Find the best pediatric dentists and doctors in ${loc}. Board-certified specialists with parent reviews, ratings, and hours.`,
+  'Daycares & Preschools': (loc) => `Best daycares and preschools in ${loc}. Montessori, Goddard, home-based, and more. Licensing, ratios, pricing, and parent reviews.`,
+  'Family-Friendly Restaurants': (loc) => `Kid-friendly restaurants in ${loc}. High chairs, kids menus, play areas. Parent-tested spots for family dining with reviews and hours.`,
+  'Kids Haircuts & Clothing': (loc) => `Kids hair salons and children's clothing stores in ${loc}. First haircut specialists, kid-friendly stylists. Reviews and pricing.`
+};
+
+function updateSeoMeta(catName, cityName) {
   const canonical = document.getElementById('canonical-link');
   if (canonical) canonical.href = 'https://kiddoscompass.com' + window.location.pathname;
 
@@ -136,8 +152,10 @@ function updateSeoMeta() {
     const path = window.location.pathname;
     if (path === '/' || path === '') {
       desc.content = 'Find the best tutoring centers, swim lessons, birthday party venues, summer camps, daycares, and pediatric dentists for kids in Plano TX, Frisco TX, and Baltimore MD.';
+    } else if (catName && SEO_DESCRIPTIONS[catName]) {
+      const loc = cityName || 'Plano, Frisco & Baltimore';
+      desc.content = SEO_DESCRIPTIONS[catName](loc);
     } else {
-      // Use the page title as a base for description
       desc.content = document.title.replace(' | KiddosCompass', '') + ' — ratings, reviews, and hours trusted by local parents.';
     }
   }
@@ -436,6 +454,34 @@ function renderCategoryPage(app, citySlug, catSlug) {
   filterSort.addEventListener('change', applyFilters);
   updateHoodFilter();
   applyFilters();
+
+  // Inject FAQ schema for this category (Google rich results)
+  injectFaqSchema(catName);
+}
+
+function injectFaqSchema(catName) {
+  // Remove any existing FAQ schema
+  const existing = document.getElementById('faq-schema');
+  if (existing) existing.remove();
+
+  const faqs = FAQ_DATA[catName];
+  if (!faqs || !faqs.length) return;
+
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    'mainEntity': faqs.map(f => ({
+      '@type': 'Question',
+      'name': f.q,
+      'acceptedAnswer': { '@type': 'Answer', 'text': f.a }
+    }))
+  };
+
+  const script = document.createElement('script');
+  script.type = 'application/ld+json';
+  script.id = 'faq-schema';
+  script.textContent = JSON.stringify(schema);
+  document.head.appendChild(script);
 }
 
 function renderSavedPage(app) {
