@@ -133,14 +133,25 @@ function route() {
 }
 
 const SEO_DESCRIPTIONS = {
-  'Tutoring & Learning Centers': (loc) => `Compare the best tutoring centers for kids in ${loc}. Kumon, Mathnasium, Sylvan & more. Parent reviews, ratings, hours, and pricing.`,
-  'Kids Activities & Classes': (loc) => `Find swim lessons, martial arts, dance, coding, and art classes for kids in ${loc}. Parent reviews, ages, pricing, and schedules.`,
-  'Birthday Party Venues': (loc) => `Best birthday party venues for kids in ${loc}. Trampoline parks, play centers, bowling, and more. Packages, pricing, and parent reviews.`,
-  'Summer Camps & After School': (loc) => `Top summer camps and after school programs in ${loc}. STEM, sports, arts, and nature camps. Ages, dates, costs, and parent reviews.`,
-  'Pediatric Dentists & Doctors': (loc) => `Find the best pediatric dentists and doctors in ${loc}. Board-certified specialists with parent reviews, ratings, and hours.`,
-  'Daycares & Preschools': (loc) => `Best daycares and preschools in ${loc}. Montessori, Goddard, home-based, and more. Licensing, ratios, pricing, and parent reviews.`,
-  'Family-Friendly Restaurants': (loc) => `Kid-friendly restaurants in ${loc}. High chairs, kids menus, play areas. Parent-tested spots for family dining with reviews and hours.`,
-  'Kids Haircuts & Clothing': (loc) => `Kids hair salons and children's clothing stores in ${loc}. First haircut specialists, kid-friendly stylists. Reviews and pricing.`
+  'Tutoring & Learning Centers': (loc) => `Find the best tutoring and learning centers in ${loc}. Compare top-rated academic programs, test prep, and local private tutors.`,
+  'Kids Activities & Classes': (loc) => `Explore fun kids' classes and activities in ${loc}. From sports and dance to art and coding, find the perfect hobby for your child.`,
+  'Birthday Party Venues': (loc) => `Plan the perfect celebration with our guide to birthday party venues in ${loc}. Browse packages, themes, and top-rated local spots.`,
+  'Summer Camps & After School': (loc) => `Discover top summer camps and after-school programs in ${loc}. Find STEM, sports, and arts programs to keep your kids learning.`,
+  'Pediatric Dentists & Doctors': (loc) => `Find trusted pediatric dentists and doctors in ${loc}. Browse top-rated healthcare providers specialized in caring for your kids.`,
+  'Daycares & Preschools': (loc) => `Browse the best daycares and preschools in ${loc}. Compare local early childhood education options, Montessori, and more.`,
+  'Family-Friendly Restaurants': (loc) => `Discover the best family-friendly restaurants in ${loc}. Find spots with kids' menus, play areas, and "kids eat free" deals.`,
+  'Kids Haircuts & Clothing': (loc) => `Find the best kids' haircuts and clothing stores in ${loc}. Explore trendy boutiques, salons for kids, and local shops.`
+};
+
+const SEO_PARAGRAPHS = {
+  'Tutoring & Learning Centers': "Empower your child's academic journey by connecting with the premier tutoring and learning centers across Plano, Frisco, and Baltimore. Our comprehensive directory features everything from STEM-focused programs to specialized reading assistance and college prep. Whether you need a local private tutor or a structured learning environment, we provide the resources to help your student excel.",
+  'Kids Activities & Classes': "Discover a world of enrichment with our curated list of kids' activities and classes in Plano, Frisco, and Baltimore. We help parents find the best local options for sports, arts, and educational hobbies that keep children active and engaged. From weekend workshops to seasonal leagues, finding your child's next passion has never been easier.",
+  'Birthday Party Venues': "Make your child's next celebration unforgettable by exploring the best birthday party venues in Plano, Frisco, and Baltimore. Our directory showcases a variety of locations, ranging from high-energy adventure parks to creative art studios and private event spaces. Compare pricing, amenities, and reviews to find a venue that fits your budget and your child's birthday wish list.",
+  'Summer Camps & After School': "Planning for school breaks or daily childcare is simple with our comprehensive list of summer camps and after-school programs. Serving Plano, Frisco, and Baltimore, we connect you with safe, enriching environments where your children can grow outside the classroom. Whether you need a full-day summer experience or reliable daily care, find the highest-rated local programs right here.",
+  'Pediatric Dentists & Doctors': "Ensure your child receives the best care possible with our directory of pediatric dentists and doctors in Plano, Frisco, and Baltimore. We prioritize healthcare providers who specialize in making medical and dental visits a positive experience for children of all ages. From routine check-ups and vaccinations to specialized dental care, find the most recommended local experts for your family.",
+  'Daycares & Preschools': "Finding the right early childhood education is a major milestone, and we are here to help you navigate daycares and preschools in Plano, Frisco, and Baltimore. Our listings include various educational philosophies, from Montessori and Reggio Emilia to traditional play-based and faith-based programs. Explore top-rated facilities that offer a safe, nurturing, and educational environment.",
+  'Family-Friendly Restaurants': "Dining out with the whole family should be stress-free and delicious. Our guide to family-friendly restaurants in Plano, Frisco, and Baltimore highlights eateries that offer more than just a kids' menu. From restaurants with fenced-in patios and playgrounds to spots with interactive table entertainment, find the perfect place for your next family meal.",
+  'Kids Haircuts & Clothing': "Keep your little ones looking their best with our directory of kids' haircuts and clothing in Plano, Frisco, and Baltimore. We feature specialized salons that know how to handle wiggly clients and local boutiques that carry everything from everyday playwear to special occasion outfits. Whether it's time for a back-to-school trim or a new wardrobe, find the top-rated local shops right here."
 };
 
 function updateSeoMeta(catName, cityName) {
@@ -404,6 +415,10 @@ function renderCategoryPage(app, citySlug, catSlug) {
       </div>
       <div class="biz-grid" id="results-grid"></div>
     </div>
+    ${SEO_PARAGRAPHS[catName] ? `
+    <div class="section" style="padding-top:0;">
+      <p style="font-size:0.85rem;color:#6A6A6A;line-height:1.7;max-width:680px;">${SEO_PARAGRAPHS[catName]}</p>
+    </div>` : ''}
   `;
 
   const filterCity = document.getElementById('filter-city');
@@ -745,8 +760,9 @@ const FAQ_DATA = {
   'Tutoring & Learning Centers': [
     { q: 'What are the best tutoring centers for kids in Plano TX?', a: 'Top-rated tutoring centers in Plano include Kumon, Mathnasium, Sylvan Learning, and C2 Education. Browse our full list with ratings, reviews, and hours to find the best fit for your child.' },
     { q: 'Kumon vs Mathnasium — which is better for my child?', a: 'Kumon focuses on self-paced worksheets building foundational math and reading skills. Mathnasium uses customized learning plans with in-center instruction. Kumon is better for building discipline; Mathnasium is better for kids who need more hands-on help.' },
-    { q: 'How much does tutoring cost in Columbia MD?', a: 'Tutoring costs in Howard County typically range from $150-$300/month for centers like Kumon, or $40-$80/hour for private tutors. Check individual listings for current pricing.' },
+    { q: 'How much does tutoring cost in Plano and Frisco?', a: 'Rates typically range from $40 to $80 per hour depending on the subject complexity and whether it is a private tutor or a learning center. Monthly center programs like Kumon run $150-$300/month.' },
     { q: 'What age should kids start tutoring?', a: 'Most learning centers accept kids as young as 3-4 for early reading and math programs. The best time to start depends on your child — if they are struggling or need enrichment, earlier is better.' },
+    { q: 'Are there specialized centers for learning disabilities?', a: 'Yes, our directory lists several specialized centers in Baltimore and North Texas that focus on dyslexia, ADHD, and other learning differences.' },
     { q: 'Are there tutoring centers in Towson MD for elementary kids?', a: 'Yes! Towson and Baltimore County have several highly-rated tutoring centers including Kumon, Huntington Learning Center, and local options. See our Baltimore County listings for full details.' }
   ],
   'Kids Activities & Classes': [
@@ -754,19 +770,25 @@ const FAQ_DATA = {
     { q: 'What age should kids start martial arts?', a: 'Most martial arts studios offer classes for kids as young as 3-4 years old. Starting early helps with discipline, coordination, and confidence. Many studios offer a free trial class.' },
     { q: 'Where can my kids take dance classes in Annapolis MD?', a: 'Anne Arundel County has several dance studios offering ballet, jazz, hip-hop, and tap for kids. Check our Anne Arundel County listings for studios with ratings and parent reviews.' },
     { q: 'What indoor activities are there for kids in Howard County MD?', a: 'Howard County offers indoor playgrounds, trampoline parks (Sky Zone Columbia), gymnastics centers, art studios, and swimming. Great for rainy days or hot summers.' },
-    { q: 'Are there kids coding or robotics classes near Frisco TX?', a: 'Yes! Frisco has several STEM-focused programs including Code Ninjas, Snapology, and various robotics clubs. These are great for kids interested in technology and engineering.' }
+    { q: 'Are there kids coding or robotics classes near Frisco TX?', a: 'Yes! Frisco has several STEM-focused programs including Code Ninjas, Snapology, and various robotics clubs. These are great for kids interested in technology and engineering.' },
+    { q: 'What age can my child start organized sports?', a: 'Many programs in Frisco and Plano offer "tiny tot" leagues starting as early as age 3 for soccer and gymnastics.' },
+    { q: 'Are there free kids activities in Baltimore?', a: 'Yes, Baltimore offers various library programs and community center workshops. Check our local activities guide for free options.' }
   ],
   'Birthday Party Venues': [
     { q: 'What are the best birthday party places for kids in Plano TX?', a: 'Popular party venues in Plano include trampoline parks, bowling alleys, pottery studios, and indoor play centers. Many offer all-inclusive party packages starting around $200-$400.' },
     { q: 'How much does a kids birthday party venue cost?', a: 'Party packages typically range from $200-$500 depending on the venue, number of kids, and add-ons. Trampoline parks and play centers are usually the most affordable options.' },
     { q: 'Trampoline park vs bowling for a kids party — which is better?', a: 'Trampoline parks are better for high-energy kids ages 5-12 who want to jump and play. Bowling is better for mixed-age groups and a more relaxed party. Both usually include a party room.' },
-    { q: 'Where can I host a toddler birthday party in Baltimore MD?', a: 'Great toddler party options in the Baltimore area include indoor play spaces, kids gyms (My Gym, The Little Gym), and pottery painting studios. These are safer for little ones than trampoline parks.' }
+    { q: 'Where can I host a toddler birthday party in Baltimore MD?', a: 'Great toddler party options in the Baltimore area include indoor play spaces, kids gyms (My Gym, The Little Gym), and pottery painting studios. These are safer for little ones than trampoline parks.' },
+    { q: 'How far in advance should I book a party venue?', a: 'We recommend booking at least 6-8 weeks in advance, especially for popular weekend time slots in Plano, Frisco, and Baltimore.' },
+    { q: 'Are there venues that handle setup and cleanup?', a: 'Yes, many full-service venues in Frisco and Plano offer all-inclusive packages that include decor, food, and post-party cleaning.' }
   ],
   'Summer Camps & After School': [
     { q: 'What are the best summer camps in Howard County MD?', a: 'Howard County offers excellent summer camps through Recreation & Parks, the YMCA, and private providers. Options include STEM camps, sports camps, art camps, and nature camps in Columbia and Ellicott City.' },
     { q: 'How much does summer camp cost in Plano TX?', a: 'Summer camp costs in Plano vary: city-run camps start around $150-$250/week, while specialty camps (STEM, sports, arts) can run $300-$500/week. Many offer early bird discounts.' },
     { q: 'What age do kids start summer camp?', a: 'Most day camps accept kids starting at age 5-6 (entering kindergarten). Some programs for younger kids (3-4) exist but are usually shorter days. Overnight camps typically start at age 7-8.' },
-    { q: 'Are there after-school programs in Severna Park MD?', a: 'Yes! Anne Arundel County has SACC (School-Age Child Care) programs, YMCA after-school care, and various enrichment programs. Check our listings for options with ratings and reviews.' }
+    { q: 'Are there after-school programs in Severna Park MD?', a: 'Yes! Anne Arundel County has SACC (School-Age Child Care) programs, YMCA after-school care, and various enrichment programs. Check our listings for options with ratings and reviews.' },
+    { q: 'When does summer camp registration open?', a: 'In Plano and Frisco, many popular camps open registration as early as February or March for the upcoming summer season.' },
+    { q: 'Are there scholarships for summer camps?', a: 'Several non-profit and city-run camps offer financial aid or sibling discounts for residents in Plano and Baltimore.' }
   ],
   'Pediatric Dentists & Doctors': [
     { q: 'When should my child first see a dentist?', a: 'The American Academy of Pediatric Dentistry recommends a first dental visit by age 1 or within 6 months of the first tooth. Early visits help prevent cavities and build comfort with dental care.' },
@@ -784,7 +806,8 @@ const FAQ_DATA = {
   'Family-Friendly Restaurants': [
     { q: 'What are the best kid-friendly restaurants in Plano TX?', a: 'Plano has many family-friendly options ranging from casual chains to local favorites. Look for restaurants with kids menus, high chairs, outdoor seating, and play areas.' },
     { q: 'Where can I find family brunch spots in Towson MD?', a: 'Towson and Baltimore County have several great brunch spots including Miss Shirley\'s Cafe, Cunningham\'s, and local diners. Check our listings for hours and parent reviews.' },
-    { q: 'Are there restaurants with play areas for kids near me?', a: 'Some restaurants in our listings feature indoor or outdoor play areas. Filter by your city and check individual listings for amenities and parent tips.' }
+    { q: 'Are there restaurants with play areas for kids near me?', a: 'Some restaurants in our listings feature indoor or outdoor play areas. Filter by your city and check individual listings for amenities and parent tips.' },
+    { q: 'Which restaurants in Plano have "Kids Eat Free" nights?', a: 'Many local spots in Plano and Frisco offer kids eat free deals on Tuesdays or Wednesdays. Check individual listings for the latest deals and promotions.' }
   ],
   'Kids Haircuts & Clothing': [
     { q: 'Where should I take my toddler for their first haircut?', a: 'Kids hair salons are designed for first haircuts — they have fun chairs, cartoons, and patient stylists. They are much better than regular barbershops for nervous toddlers. Check our listings for kids salons near you.' },
