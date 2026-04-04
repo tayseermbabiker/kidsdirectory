@@ -27,6 +27,44 @@
   to = "/.netlify/functions/vote"
   status = 200
 
+# --- Server-rendered city + category pages (SEO) ---
+# City landing pages
+[[redirects]]
+  from = "/plano"
+  to = "/.netlify/functions/pages"
+  status = 200
+
+[[redirects]]
+  from = "/frisco"
+  to = "/.netlify/functions/pages"
+  status = 200
+
+[[redirects]]
+  from = "/baltimore"
+  to = "/.netlify/functions/pages"
+  status = 200
+
+# Category pages (city/category)
+[[redirects]]
+  from = "/plano/*"
+  to = "/.netlify/functions/pages"
+  status = 200
+
+[[redirects]]
+  from = "/frisco/*"
+  to = "/.netlify/functions/pages"
+  status = 200
+
+[[redirects]]
+  from = "/baltimore/*"
+  to = "/.netlify/functions/pages"
+  status = 200
+
+[[redirects]]
+  from = "/all/*"
+  to = "/.netlify/functions/pages"
+  status = 200
+
 # Legal pages
 [[redirects]]
   from = "/privacy"
@@ -43,27 +81,7 @@
   to = "/index.html"
   status = 200
 
-# SPA fallback for category pages
-[[redirects]]
-  from = "/all/*"
-  to = "/index.html"
-  status = 200
-
-[[redirects]]
-  from = "/plano/*"
-  to = "/index.html"
-  status = 200
-
-[[redirects]]
-  from = "/frisco/*"
-  to = "/index.html"
-  status = 200
-
-[[redirects]]
-  from = "/baltimore/*"
-  to = "/index.html"
-  status = 200
-
+# SPA fallback
 [[redirects]]
   from = "/*"
   to = "/index.html"
