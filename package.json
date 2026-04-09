@@ -20,7 +20,8 @@
     "enrich:websites": "node scrapers/enrich-from-websites.js",
     "apply:brands": "node scripts/apply-brand-templates.js",
     "scrape:news": "node scrapers/news-scraper.js",
-    "export:news": "node scripts/export-news.js"
+    "export:news": "node scripts/export-news.js",
+    "download:images": "node scripts/download-images.js"
   },
   "dependencies": {
     "@sparticuz/chromium": "^131.0.0",
