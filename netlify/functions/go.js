@@ -291,7 +291,7 @@ exports.handler = async (event) => {
           const rSvc = parseServices(r.services);
           return `
           <a href="/go/${r.id}" class="related-card">
-            ${r.image_url ? `<img src="${escHtml(r.image_url)}" alt="${escHtml(r.name)}" class="related-img">` : `<div class="related-img related-placeholder">${(r.name || '?')[0]}</div>`}
+            ${r.image_url ? `<img src="${escHtml(r.image_url)}" alt="${escHtml(r.name)}" class="related-img" onerror="this.onerror=null;var d=document.createElement('div');d.className='related-img related-placeholder';d.textContent='${(r.name || '?')[0]}';this.replaceWith(d)">` : `<div class="related-img related-placeholder">${(r.name || '?')[0]}</div>`}
             <div class="related-info">
               <div class="related-name">${escHtml(r.name)}</div>
               <div class="related-meta">${escHtml(r.city)}${r.rating ? ` · ${r.rating} stars` : ''}${r.review_count ? ` · ${r.review_count} reviews` : ''}</div>
@@ -334,6 +334,7 @@ exports.handler = async (event) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escHtml(f.name)} — ${escHtml(f.category)} in ${escHtml(f.city)}, ${state} | KiddosCompass</title>
   <meta name="description" content="${escHtml(metaDesc.substring(0, 160))}">
+  <meta name="p:domain_verify" content="43b6c00437cdfe63d2f2ab5466adc0bd"/>
   <link rel="canonical" href="${SITE_URL}/go/${id}">
   <meta property="og:title" content="${escHtml(f.name)} — ${escHtml(f.category)} in ${escHtml(f.city)}, ${state} | KiddosCompass">
   <meta property="og:description" content="${escHtml(metaDesc.substring(0, 200))}">
@@ -484,7 +485,7 @@ exports.handler = async (event) => {
   </nav>
 
   <div class="hero-section">
-    ${f.image_url ? `<img class="hero-img" src="${escHtml(f.image_url)}" alt="${escHtml(f.name)}">` : `<div class="hero-placeholder"><span class="hero-placeholder-text">${escHtml(f.category || '')}</span></div>`}
+    ${f.image_url ? `<img class="hero-img" src="${escHtml(f.image_url)}" alt="${escHtml(f.name)}" onerror="this.onerror=null;this.parentNode.innerHTML='<div class=\\'hero-placeholder\\'><span class=\\'hero-placeholder-text\\'>${escHtml(f.category || '')}</span></div>'">` : `<div class="hero-placeholder"><span class="hero-placeholder-text">${escHtml(f.category || '')}</span></div>`}
     ${f.image_url ? '<div class="hero-overlay"></div>' : ''}
   </div>
 

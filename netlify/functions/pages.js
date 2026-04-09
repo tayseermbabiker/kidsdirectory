@@ -196,7 +196,7 @@ function renderBizCard(biz) {
   return `
     <a href="/go/${biz.id}" class="biz-card">
       <div class="biz-card-img-wrap">
-        <img class="biz-card-img" src="${escHtml(imgSrc)}" alt="${escHtml(biz.name)}" loading="lazy">
+        <img class="biz-card-img" src="${escHtml(imgSrc)}" alt="${escHtml(biz.name)}" loading="lazy" onerror="this.onerror=null;this.src='${escHtml(CAT_FALLBACK_IMGS[biz.category] || '')}'">
         ${favBadge || ratingBadge}
         <div class="biz-card-cat-pill">${escHtml(biz.category)}</div>
       </div>
@@ -230,6 +230,7 @@ function htmlShell({ title, metaDesc, canonical, ogImage, bodyContent, jsonLdScr
   <meta name="description" content="${escHtml(metaDesc.substring(0, 160))}">
   <link rel="canonical" href="${canonical}">
   <meta name="google-site-verification" content="IbUt71eLwWLF19TF9Av1E2ptVsgvC2PjmO0pDt6u32Q" />
+  <meta name="p:domain_verify" content="43b6c00437cdfe63d2f2ab5466adc0bd"/>
   <meta property="og:title" content="${escHtml(title)}">
   <meta property="og:description" content="${escHtml(metaDesc.substring(0, 200))}">
   <meta property="og:url" content="${canonical}">

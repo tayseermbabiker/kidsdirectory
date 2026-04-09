@@ -682,10 +682,12 @@ function initNewsCarousel() {
   // Set explicit width so translateX(-50%) works correctly
   const cards = track.querySelectorAll('.news-card');
   if (cards.length > 0) {
-    const cardWidth = cards[0].offsetWidth;
-    const gap = 16;
-    const totalWidth = cards.length * (cardWidth + gap);
-    track.style.width = totalWidth + 'px';
+    requestAnimationFrame(() => {
+      const cardWidth = cards[0].offsetWidth || 280;
+      const gap = 16;
+      const totalWidth = cards.length * (cardWidth + gap);
+      track.style.width = totalWidth + 'px';
+    });
   }
 
   track.addEventListener('mouseenter', () => {
