@@ -474,10 +474,16 @@ function renderCategoryPage(app, citySlug, catSlug) {
   injectFaqSchema(catName);
 }
 
+function removeAllFaqSchemas() {
+  const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+  scripts.forEach(s => {
+    if (s.textContent && s.textContent.includes('"FAQPage"')) s.remove();
+  });
+}
+
 function injectFaqSchema(catName) {
-  // Remove any existing FAQ schema
-  const existing = document.getElementById('faq-schema');
-  if (existing) existing.remove();
+  // Remove any existing FAQPage schema (SSR or previously injected) to prevent duplicates
+  removeAllFaqSchemas();
 
   const faqs = FAQ_DATA[catName];
   if (!faqs || !faqs.length) return;
