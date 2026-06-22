@@ -62,12 +62,12 @@ const CAT_HERO_IMGS = {
 };
 
 const SEO_DESCRIPTIONS = {
-  'Tutoring & Learning Centers': (loc) => `Find the best tutoring and learning centers in ${loc}. Compare top-rated academic programs, test prep, and local private tutors — ratings, reviews, and hours trusted by local parents.`,
-  'Kids Activities & Classes': (loc) => `Explore fun kids' classes and activities in ${loc}. From sports and dance to art and coding, find the perfect hobby for your child with ratings and reviews.`,
-  'Birthday Party Venues': (loc) => `Plan the perfect celebration with our guide to birthday party venues in ${loc}. Browse packages, themes, and top-rated local spots with parent reviews.`,
-  'Summer Camps & After School': (loc) => `Discover top summer camps and after-school programs in ${loc}. Find STEM, sports, and arts programs with ratings and hours.`,
+  'Tutoring & Learning Centers': (loc) => `Find top reading, math, and STAAR/test-prep tutoring centers in ${loc}. Compare local learning centers, private tutors, and enrichment programs by grade level — with parent ratings and reviews.`,
+  'Kids Activities & Classes': (loc) => `Discover kids' activities and classes in ${loc} — martial arts, karate, swim, dance, music, coding, and sports. Compare local programs by age and schedule with parent ratings.`,
+  'Birthday Party Venues': (loc) => `Find kids' birthday party venues and party places in ${loc}. Compare indoor play centers, party rooms, and themed spots by age, packages, and price — with parent ratings.`,
+  'Summer Camps & After School': (loc) => `Find summer camps and after-school programs in ${loc} — day camps, STEM and coding camps, sports, and academic enrichment. Compare by age and dates with parent reviews.`,
   'Pediatric Dentists & Doctors': (loc) => `Find trusted pediatric dentists and doctors in ${loc}. Browse top-rated healthcare providers specialized in caring for your kids.`,
-  'Daycares & Preschools': (loc) => `Browse the best daycares and preschools in ${loc}. Compare local early childhood education options, Montessori, and more with parent reviews.`,
+  'Daycares & Preschools': (loc) => `Browse daycares, preschools, and childcare in ${loc}. Compare Montessori, play-based, and faith-based programs by hours, age range, and licensing — with parent reviews.`,
   'Family-Friendly Restaurants': (loc) => `Discover the best family-friendly restaurants in ${loc}. Find spots with kids' menus, play areas, and parent-reviewed dining experiences.`,
   'Kids Haircuts & Clothing': (loc) => `Find the best kids' haircuts and clothing stores in ${loc}. Explore trendy boutiques, salons for kids, and local shops with ratings.`
 };
@@ -209,12 +209,12 @@ function getSeoTitle(catName, cityName, city) {
   const stateAbbr = city ? city.state : '';
   const loc = cityName === 'All Cities' ? 'Plano, Frisco & Baltimore' : `${cityName}${stateAbbr ? ', ' + stateAbbr : ''}`;
   const map = {
-    'Tutoring & Learning Centers': `Best Tutoring Centers for Kids in ${loc}`,
+    'Tutoring & Learning Centers': `Tutoring Centers in ${loc} — Reading, Math & Test Prep`,
     'Kids Activities & Classes': `Kids Activities & Classes in ${loc}`,
-    'Birthday Party Venues': `Best Birthday Party Venues for Kids in ${loc}`,
+    'Birthday Party Venues': `Kids Birthday Party Venues & Places in ${loc}`,
     'Summer Camps & After School': `Summer Camps & After School Programs in ${loc}`,
     'Pediatric Dentists & Doctors': `Best Pediatric Dentists & Doctors in ${loc}`,
-    'Daycares & Preschools': `Best Daycares & Preschools in ${loc}`,
+    'Daycares & Preschools': `Daycares, Preschools & Childcare in ${loc}`,
     'Family-Friendly Restaurants': `Family-Friendly Restaurants in ${loc}`,
     'Kids Haircuts & Clothing': `Kids Haircuts & Clothing Stores in ${loc}`
   };
