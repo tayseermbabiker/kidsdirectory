@@ -411,6 +411,15 @@ function renderCategoryPageHTML(businesses, citySlug, catSlug) {
     topBiz: filtered[0], isAllCities
   });
 
+  // Contextual link to a related in-depth guide, where one exists.
+  let guideCallout = '';
+  if (citySlug === 'frisco' && catName === 'Tutoring & Learning Centers') {
+    guideCallout = `
+    <div class="section" style="padding-top:0;">
+      <a href="/guides/frisco-tutoring" style="display:block;max-width:760px;padding:14px 18px;background:#F0FDFA;border:1px solid #99F6E4;border-radius:10px;text-decoration:none;color:#0F766E;font-weight:600;font-size:0.95rem;">📘 New: Reading &amp; Math Tutoring in Frisco — A Parent's Guide (how to choose, costs &amp; what to ask) &rarr;</a>
+    </div>`;
+  }
+
   // Make the supporting bottom paragraph city-specific too, so the three city
   // pages for a category aren't near-duplicates of each other.
   const cityLabelForPara = isAllCities ? 'Plano, Frisco, and Baltimore' : `${cityName}${stateAbbr ? ', ' + stateAbbr : ''}`;
@@ -436,6 +445,7 @@ function renderCategoryPageHTML(businesses, citySlug, catSlug) {
       </div>
     </div>`}
     ${localIntro}
+    ${guideCallout}
     <div class="section">
       <div class="biz-grid">
         ${cardsHtml}
@@ -547,9 +557,139 @@ function renderCityPageHTML(businesses, citySlug) {
   return htmlShell({ title, metaDesc, canonical, bodyContent: sectionsHtml, jsonLdScripts });
 }
 
+// --- GUIDE PAGES ---
+// Evergreen, link-worthy long-form guides. Freshness is signalled with an
+// "Updated" stamp in the body (bump GUIDE_UPDATED when content changes) and
+// the sitemap lastmod — NOT a year in the title, so it never reads as stale.
+const GUIDE_UPDATED = 'June 2026';
+const GUIDE_UPDATED_ISO = '2026-06-22';
+
+function guideSection(heading, inner) {
+  return `
+    <div class="section" style="padding-top:0;max-width:760px;">
+      <h2 style="font-family:'Poppins',sans-serif;font-size:1.3rem;font-weight:600;margin-bottom:12px;">${heading}</h2>
+      ${inner}
+    </div>`;
+}
+
+function renderFriscoTutoringGuide(businesses) {
+  const title = "Reading & Math Tutoring in Frisco, TX — A Parent's Guide | KiddosCompass";
+  const metaDesc = "A parent's guide to choosing reading, math, and STAAR test-prep tutoring in Frisco, TX — how to compare learning centers, what to ask, costs, and the top-rated local options.";
+  const canonical = `${SITE_URL}/guides/frisco-tutoring`;
+
+  // Curated, data-driven list of top Frisco tutoring centers
+  const frisco = businesses
+    .filter(b => b.category === 'Tutoring & Learning Centers' &&
+      (b.city && (b.city.toLowerCase() === 'frisco' || slugify(b.city) === 'frisco')))
+    .sort((a, b) => (b.rating || 0) - (a.rating || 0));
+  const topList = frisco.slice(0, 9);
+
+  const pStyle = `style="font-size:0.95rem;color:#3A3A3A;line-height:1.8;margin-bottom:14px;"`;
+  const liStyle = `style="font-size:0.95rem;color:#3A3A3A;line-height:1.8;margin-bottom:8px;"`;
+
+  const faqs = [
+    { q: 'How much does tutoring cost in Frisco?', a: 'Most Frisco learning centers charge roughly $40–$80 per hour for one-on-one tutoring, with small-group and membership programs often working out cheaper per session. Test-prep packages (STAAR, SAT/ACT) are usually priced as bundles. Always ask about assessment fees, registration fees, and minimum commitments.' },
+    { q: 'Reading center, math center, or general tutoring — which does my child need?', a: 'If your child struggles with one subject, a specialist (a dedicated reading or math program) usually delivers faster results. If they need broad support, homework help, or enrichment across subjects, a general learning center is more flexible. For grade-level testing, look specifically for STAAR test-prep experience.' },
+    { q: 'When should I start tutoring before STAAR testing?', a: 'Most families start STAAR prep 2–3 months before testing, but year-round reinforcement works better than cramming. If your child is already behind grade level, start as early as possible rather than waiting for test season.' },
+    { q: 'In-person or online tutoring in Frisco?', a: 'Younger children (K–5) and kids who get distracted usually do better in person. Online tutoring can be excellent for older, self-directed students and for hard-to-find specialist subjects. Several Frisco centers offer both.' }
+  ];
+
+  const listHtml = topList.length
+    ? `<div class="biz-grid">${topList.map(renderBizCard).join('')}</div>`
+    : '<p ' + pStyle + '>Browse our full list of Frisco tutoring centers below.</p>';
+
+  const bodyContent = `
+    <div class="page-header">
+      <div class="page-header-inner">
+        <div class="breadcrumb"><a href="/">Home</a> / <a href="/frisco">Frisco</a> / Tutoring Guide</div>
+        <h1>Reading &amp; Math Tutoring in Frisco, TX: A Parent's Guide</h1>
+        <p>Updated ${GUIDE_UPDATED}</p>
+      </div>
+    </div>
+
+    ${guideSection('How to choose a tutoring center in Frisco', `
+      <p ${pStyle}>Frisco has one of the most competitive school environments in North Texas, and the demand for tutoring reflects it — from reading support in the early grades to math acceleration and STAAR test prep. The right choice depends on what your child actually needs, so it helps to narrow it down before you start calling around.</p>
+      <ul>
+        <li ${liStyle}><strong>Reading tutoring</strong> — best for phonics, fluency, comprehension, and writing support, especially in elementary and middle school.</li>
+        <li ${liStyle}><strong>Math tutoring</strong> — for filling gaps, keeping up with advanced/pre-AP tracks, or building confidence before a tough year.</li>
+        <li ${liStyle}><strong>Test prep (STAAR, SAT/ACT)</strong> — look for centers that specifically advertise Texas STAAR experience, not just general tutoring.</li>
+        <li ${liStyle}><strong>General learning centers</strong> — flexible homework help and enrichment across subjects.</li>
+      </ul>`)}
+
+    ${guideSection('What to look for by grade level', `
+      <p ${pStyle}><strong>Elementary (K–5):</strong> Prioritize reading foundations and a warm, patient environment. Small groups or one-on-one matter most here — a distracted 7-year-old learns little in a large room.</p>
+      <p ${pStyle}><strong>Middle school (6–8):</strong> This is where math gaps start to compound and STAAR pressure builds. Look for centers that diagnose specific gaps rather than re-teaching everything.</p>
+      <p ${pStyle}><strong>High school (9–12):</strong> Subject-specialist tutors and SAT/ACT prep become the priority. Ask about the tutor's own background in the subject.</p>`)}
+
+    ${guideSection('Questions to ask before you enroll', `
+      <ul>
+        <li ${liStyle}>Do you assess my child first, and is there a fee for it?</li>
+        <li ${liStyle}>Will my child have the same tutor each session?</li>
+        <li ${liStyle}>What are your tutors' qualifications, and do they have STAAR experience?</li>
+        <li ${liStyle}>How do you measure and report progress?</li>
+        <li ${liStyle}>What's the group size, and what's the total monthly cost including any fees?</li>
+        <li ${liStyle}>Is there a minimum contract or can I go month to month?</li>
+      </ul>`)}
+
+    ${guideSection('Top-rated tutoring centers in Frisco', `
+      <p ${pStyle}>Here are some of the highest-rated tutoring and learning centers in Frisco, based on parent ratings. Tap any listing for hours, reviews, and what to expect.</p>
+      ${listHtml}
+      <p ${pStyle} style="margin-top:16px;font-size:0.95rem;"><a href="/frisco/tutoring-learning-centers" style="color:#0F766E;font-weight:600;">See the full list of Frisco tutoring centers &rarr;</a></p>`)}
+
+    ${guideSection('Frequently asked questions', `
+      ${faqs.map(f => `
+      <details style="margin-bottom:12px;padding:12px 16px;background:#fff;border:1px solid #E4E4E7;border-radius:8px;">
+        <summary style="font-weight:500;font-size:0.95rem;cursor:pointer;color:#2E2E2E;">${escHtml(f.q)}</summary>
+        <p style="margin-top:8px;font-size:0.9rem;color:#5A5A5A;line-height:1.75;">${escHtml(f.a)}</p>
+      </details>`).join('')}`)}`;
+
+  const jsonLdScripts = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Reading & Math Tutoring in Frisco, TX: A Parent's Guide",
+      "description": metaDesc,
+      "datePublished": GUIDE_UPDATED_ISO,
+      "dateModified": GUIDE_UPDATED_ISO,
+      "author": { "@type": "Organization", "name": "KiddosCompass" },
+      "publisher": { "@type": "Organization", "name": "KiddosCompass" },
+      "mainEntityOfPage": canonical
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": faqs.map(f => ({
+        "@type": "Question",
+        "name": f.q,
+        "acceptedAnswer": { "@type": "Answer", "text": f.a }
+      }))
+    }
+  ];
+
+  return htmlShell({ title, metaDesc, canonical, bodyContent, jsonLdScripts });
+}
+
 // --- HANDLER ---
 exports.handler = async (event) => {
   const path = event.path.replace(/\/$/, '') || '/';
+
+  // Guide pages (evergreen long-form content)
+  if (path === '/guides/frisco-tutoring') {
+    try {
+      const businesses = await loadBusinesses();
+      return {
+        statusCode: 200,
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'public, max-age=3600, s-maxage=86400'
+        },
+        body: renderFriscoTutoringGuide(businesses)
+      };
+    } catch (err) {
+      console.error('pages.js guide error:', err);
+      return { statusCode: 500, body: 'Internal server error' };
+    }
+  }
 
   // Match /:city or /:city/:category
   const validCities = CITIES.map(c => c.slug).join('|');

@@ -29,6 +29,12 @@
   status = 200
 
 # --- Server-rendered city + category pages (SEO) ---
+# Guide pages (evergreen long-form content)
+[[redirects]]
+  from = "/guides/*"
+  to = "/.netlify/functions/pages"
+  status = 200
+
 # City landing pages
 [[redirects]]
   from = "/plano"

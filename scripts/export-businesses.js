@@ -124,6 +124,12 @@ async function exportBusinesses() {
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
+  <url>
+    <loc>${SITE_URL}/guides/frisco-tutoring</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
 ${['plano', 'frisco', 'baltimore'].map(city => categories.map(cat => `  <url>
     <loc>${SITE_URL}/${city}/${cat}</loc>
     <lastmod>${today}</lastmod>
