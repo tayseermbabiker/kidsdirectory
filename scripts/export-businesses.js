@@ -130,16 +130,13 @@ ${['plano', 'frisco', 'baltimore'].map(city => categories.map(cat => `  <url>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>`).join('\n')).join('\n')}
-${businesses.map(b => `  <url>
-    <loc>${SITE_URL}/go/${b.id}</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>`).join('\n')}
 </urlset>`;
+  // NOTE: /go/{id} outbound redirect links are intentionally EXCLUDED from the
+  // sitemap. They are tracking redirects to external sites and must not be
+  // indexed (they also carry a noindex header in netlify/functions/go.js).
 
   fs.writeFileSync(path.join(publicDir, 'sitemap.xml'), sitemap);
-  console.log(`Generated sitemap.xml with ${1 + categories.length * 3 + businesses.length} URLs`);
+  console.log(`Generated sitemap.xml with ${1 + categories.length * 3} URLs`);
 }
 
 exportBusinesses().catch(console.error);
