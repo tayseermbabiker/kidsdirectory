@@ -335,7 +335,7 @@ exports.handler = async (event) => {
   <title>${escHtml(f.name)} — ${escHtml(f.category)} in ${escHtml(f.city)}, ${state} | KiddosCompass</title>
   <meta name="description" content="${escHtml(metaDesc.substring(0, 160))}">
   <meta name="p:domain_verify" content="43b6c00437cdfe63d2f2ab5466adc0bd"/>
-  <meta name="robots" content="noindex, nofollow">
+  <link rel="canonical" href="${SITE_URL}/go/${id}">
   <meta property="og:title" content="${escHtml(f.name)} — ${escHtml(f.category)} in ${escHtml(f.city)}, ${state} | KiddosCompass">
   <meta property="og:description" content="${escHtml(metaDesc.substring(0, 200))}">
   ${f.image_url ? `<meta property="og:image" content="${escHtml(f.image_url)}">` : ''}
@@ -617,10 +617,7 @@ exports.handler = async (event) => {
       statusCode: 200,
       headers: {
         'Content-Type': 'text/html',
-        'Cache-Control': 'public, max-age=3600, s-maxage=86400',
-        // Outbound redirect/interstitial page — keep it out of the index so
-        // Google focuses crawl budget on real city/category content pages.
-        'X-Robots-Tag': 'noindex, nofollow'
+        'Cache-Control': 'public, max-age=3600, s-maxage=86400'
       },
       body: html
     };
