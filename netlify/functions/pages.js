@@ -83,6 +83,50 @@ const SEO_PARAGRAPHS = {
   'Kids Haircuts & Clothing': "Keep your little ones looking their best with our directory of kids' haircuts and clothing in Plano, Frisco, and Baltimore. We feature specialized salons that know how to handle wiggly clients and local boutiques that carry everything from everyday playwear to special occasion outfits. Whether it's time for a back-to-school trim or a new wardrobe, find the top-rated local shops right here."
 };
 
+// City-specific context phrases so each city page has unique on-page copy
+// (avoids near-duplicate content across /plano, /frisco, /baltimore).
+const CITY_CONTEXT = {
+  plano: 'Plano, TX — a family-focused suburb north of Dallas known for its strong schools and neighborhoods like Willow Bend, Legacy West, and West Plano',
+  frisco: 'Frisco, TX — one of the fastest-growing family cities in North Texas, spanning Phillips Creek Ranch, Starwood, and the area around The Star and PGA Frisco',
+  baltimore: 'the Greater Baltimore, MD area, including Howard County, Baltimore County, Anne Arundel County, and Harford County'
+};
+const ALL_CITIES_CONTEXT = 'Plano and Frisco, TX and the Greater Baltimore, MD area';
+
+// One practical "what to look for" sentence per category, used in the intro.
+const CAT_INTRO_HOOK = {
+  'Tutoring & Learning Centers': 'Whether your child needs to catch up, get ahead, or prep for the STAAR or SAT, these centers cover everything from one-on-one tutoring to small-group enrichment.',
+  'Kids Activities & Classes': 'From soccer and gymnastics to art, music, and coding clubs, these programs help kids build skills and confidence outside the classroom.',
+  'Birthday Party Venues': 'From indoor play centers and trampoline parks to art studios and private party rooms, these venues handle the setup, entertainment, and cleanup for you.',
+  'Summer Camps & After School': 'Compare full-day summer camps, specialty STEM and sports programs, and after-school care that keeps kids busy when school is out.',
+  'Pediatric Dentists & Doctors': 'Each provider below focuses on making checkups, cleanings, and visits calm and kid-friendly — from first teeth through the teen years.',
+  'Daycares & Preschools': 'Compare Montessori, play-based, and faith-based programs by licensing, hours, and the age ranges that fit your family’s routine.',
+  'Family-Friendly Restaurants': 'These spots welcome kids with dedicated menus, high chairs, and room to move, so the whole family can actually enjoy the meal.',
+  'Kids Haircuts & Clothing': 'From first-haircut salons that know how to handle squirmy toddlers to boutiques for everyday and special-occasion outfits.'
+};
+
+// Builds a unique, hyper-local intro (H2 + paragraph) for each city/category
+// page. Placed above the listings so Google sees substantial unique content.
+function buildLocalIntro({ catName, cityName, stateAbbr, citySlug, count, topBiz, isAllCities }) {
+  if (!count) return '';
+  const catLower = catName.toLowerCase();
+  const cityLabel = isAllCities ? 'Plano, Frisco & Baltimore' : `${cityName}${stateAbbr ? ', ' + stateAbbr : ''}`;
+  const context = isAllCities ? ALL_CITIES_CONTEXT : (CITY_CONTEXT[citySlug] || cityLabel);
+  const heading = isAllCities
+    ? `${catName} Across Plano, Frisco &amp; Baltimore: What Parents Should Know`
+    : `${escHtml(catName)} in ${escHtml(cityLabel)}: What Parents Should Know`;
+  const ratedPrefix = (topBiz && (topBiz.rating || 0) >= 4) ? 'top-rated ' : '';
+  const favorite = (topBiz && (topBiz.rating || 0) >= 4.5)
+    ? ` Local favorites like ${escHtml(topBiz.name)} lead the list.`
+    : '';
+  const hook = CAT_INTRO_HOOK[catName] || '';
+  const para = `Looking for the best ${escHtml(catLower)} in ${escHtml(cityLabel)}? KiddosCompass has rounded up ${count} ${ratedPrefix}${escHtml(catLower)} across ${escHtml(context)}.${favorite} ${escHtml(hook)} Every listing below is ranked by real parent ratings and reviews, so you can compare options and find the right fit for your family.`;
+  return `
+    <div class="section" style="padding-bottom:0;">
+      <h2 style="font-family:'Poppins',sans-serif;font-size:1.25rem;font-weight:600;margin-bottom:10px;">${heading}</h2>
+      <p style="font-size:0.92rem;color:#4A4A4A;line-height:1.75;max-width:760px;">${para}</p>
+    </div>`;
+}
+
 const FAQ_DATA = {
   'Tutoring & Learning Centers': [
     { q: 'What are the best tutoring centers for kids in Plano TX?', a: 'Top-rated tutoring centers in Plano include Kumon, Mathnasium, Sylvan Learning, and C2 Education. Browse our full list with ratings, reviews, and hours to find the best fit for your child.' },
@@ -361,6 +405,19 @@ function renderCategoryPageHTML(businesses, citySlug, catSlug) {
       </details>`).join('')}
     </div>` : '';
 
+  // Unique, hyper-local intro shown above the listings (SEO + UX).
+  const localIntro = buildLocalIntro({
+    catName, cityName, stateAbbr, citySlug, count: filtered.length,
+    topBiz: filtered[0], isAllCities
+  });
+
+  // Make the supporting bottom paragraph city-specific too, so the three city
+  // pages for a category aren't near-duplicates of each other.
+  const cityLabelForPara = isAllCities ? 'Plano, Frisco, and Baltimore' : `${cityName}${stateAbbr ? ', ' + stateAbbr : ''}`;
+  const seoPara = SEO_PARAGRAPHS[catName]
+    ? SEO_PARAGRAPHS[catName].replace(/Plano, Frisco,? and Baltimore/g, cityLabelForPara)
+    : '';
+
   const bodyContent = `
     ${heroImg ? `
     <div class="cat-hero">
@@ -378,14 +435,15 @@ function renderCategoryPageHTML(businesses, citySlug, catSlug) {
         <p>${filtered.length} listings in ${escHtml(cityName)}</p>
       </div>
     </div>`}
+    ${localIntro}
     <div class="section">
       <div class="biz-grid">
         ${cardsHtml}
       </div>
     </div>
-    ${SEO_PARAGRAPHS[catName] ? `
+    ${seoPara ? `
     <div class="section" style="padding-top:0;">
-      <p style="font-size:0.85rem;color:#6A6A6A;line-height:1.7;max-width:680px;">${SEO_PARAGRAPHS[catName]}</p>
+      <p style="font-size:0.85rem;color:#6A6A6A;line-height:1.7;max-width:680px;">${seoPara}</p>
     </div>` : ''}
     ${faqHtml}`;
 
